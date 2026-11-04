@@ -202,6 +202,7 @@ class FenixApplicationTest {
         every { settings.historyMetadataUIFeature } returns false
         every { settings.showPocketRecommendationsFeature } returns true
         every { settings.showContileFeature } returns true
+        every { settings.showSponsoredSuggestions } returns true
         every { application.reportHomeScreenMetrics(settings) } just Runs
         every { application.deviceTotalRAM } returns 7L
         every { settings.inactiveTabsAreEnabled } returns true

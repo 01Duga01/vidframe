@@ -63,7 +63,7 @@ class UboProvisionerTest {
             val provisioner = provisioner()
 
             provisioner.start()
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             assertFalse(provisioner.ready.value)
             assertTrue(url.captured.startsWith("file://"))
@@ -89,7 +89,7 @@ class UboProvisionerTest {
 
             assertTrue(provisioner.ready.value)
             provisioner.start()
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             verify(exactly = 0) { addonManager.installAddon(any(), any(), any(), any()) }
         }
@@ -101,7 +101,7 @@ class UboProvisionerTest {
             val provisioner = provisioner()
 
             provisioner.start()
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             assertTrue(provisioner.ready.value)
             verify(exactly = 0) { addonManager.installAddon(any(), any(), any(), any()) }
@@ -115,7 +115,7 @@ class UboProvisionerTest {
             val provisioner = provisioner()
 
             provisioner.start()
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
             onError.captured(IllegalStateException("signature"))
 
             assertTrue(provisioner.ready.value)
@@ -127,7 +127,7 @@ class UboProvisionerTest {
             every { addonManager.installAddon(any(), any(), any(), any()) } returns mockk()
             var response: PermissionPromptResponse? = null
             provisioner().start()
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             store.dispatch(
                 UpdatePromptRequestWebExtensionAction(
@@ -139,7 +139,7 @@ class UboProvisionerTest {
                     ) { response = it }
                 )
             )
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             assertEquals(PermissionPromptResponse(isPermissionsGranted = true, isPrivateModeGranted = true), response)
             assertNull(store.state.webExtensionPromptRequest)
@@ -150,7 +150,7 @@ class UboProvisionerTest {
         runTest(testDispatcher) {
             var answered = false
             provisioner().start()
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             val request =
                 WebExtensionPromptRequest.AfterInstallation.Permissions.Required(
@@ -160,7 +160,7 @@ class UboProvisionerTest {
                     emptyList(),
                 ) { answered = true }
             store.dispatch(UpdatePromptRequestWebExtensionAction(request))
-            testScheduler.advanceUntilIdle()
+            testScheduler.runCurrent()
 
             assertFalse(answered)
             assertEquals(request, store.state.webExtensionPromptRequest)

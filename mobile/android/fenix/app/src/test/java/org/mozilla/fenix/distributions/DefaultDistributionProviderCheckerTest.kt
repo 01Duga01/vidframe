@@ -82,7 +82,7 @@ class DefaultDistributionProviderCheckerTest {
     fun `WHEN the encrypted_data column is not json THEN null is returned`() = runBlocking {
         createFakeContentProviderForAdjust(
             otherAppsPackageName = "some.package",
-            columns = listOf(Pair("org.mozilla.fenix.debug", Pair("encrypted_data", "not json"))),
+            columns = listOf(Pair(testContext.packageName, Pair("encrypted_data", "not json"))),
         )
 
         val provider = subject.queryProvider()
@@ -107,7 +107,7 @@ class DefaultDistributionProviderCheckerTest {
     fun `WHEN the encrypted_data column does not have a provider string THEN null is returned`() = runBlocking {
         createFakeContentProviderForAdjust(
             otherAppsPackageName = "some.package",
-            columns = listOf(Pair("org.mozilla.fenix.debug", Pair("encrypted_data", "{\"test\": \"test\"}"))),
+            columns = listOf(Pair(testContext.packageName, Pair("encrypted_data", "{\"test\": \"test\"}"))),
         )
 
         val provider = subject.queryProvider()
@@ -120,7 +120,7 @@ class DefaultDistributionProviderCheckerTest {
         otherAppsPackageName: String,
         providerName: String = "provider",
         columns: List<Pair<String, Pair<String, String>>> =
-            listOf(Pair("org.mozilla.fenix.debug", Pair("encrypted_data", "{\"provider\": \"$providerName\"}"))),
+            listOf(Pair(testContext.packageName, Pair("encrypted_data", "{\"provider\": \"$providerName\"}"))),
     ) {
         val shadowPackageManager = shadowOf(testContext.packageManager)
 
