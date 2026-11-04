@@ -43,6 +43,7 @@
             │   ├── assets/extensions/
             │   │   ├── vidframe-ui/                   (new) встроенное расширение: CSS для m.youtube.com
             │   │   │   ├── manifest.json
+            │   │   │   ├── player.js                  зум видео щипком, мини-плеер
             │   │   │   ├── m-youtube.css
             │   │   │   └── account-pages.css
             │   │   └── ublock_origin.xpi              (build) кладёт fetch-ubo.sh, в git не хранится
@@ -61,6 +62,12 @@
             │   │       ├── DohFailover.kt             TRR-only + переключение endpoint по health-check
             │   │       ├── UboProvisioner.kt          первая установка uBO, автоподтверждение разрешений
             │   │       ├── VidframeLauncherActivity.kt запуск m.youtube.com как standalone web-app, ожидание uBO
+            │   │       ├── dpi/                       обход DPI внутри приложения (без root и VPN)
+            │   │       │   ├── TlsDesync.kt           разбор ClientHello, разрез SNI на записи и сегменты
+            │   │       │   ├── DpiBypassProxy.kt      локальный SOCKS5-прокси на 127.0.0.1
+            │   │       │   └── DpiBypass.kt           автовключение для RU, настройка Gecko
+            │   │       ├── VidframePictureInPicture.kt «Домой» при воспроизведении → PiP
+            │   │       ├── VideoCodecTuning.kt        AV1 только при аппаратном декодере
             │   │       ├── VidframeHomeGuard.kt       домашний экран/тулбар/вкладки Fenix → стартовая страница
             │   │       └── VidframeIntegration.kt     единая точка старта
             │   └── res/

@@ -5,14 +5,12 @@
 package org.mozilla.fenix.vidframe
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.view.Gravity
-import android.widget.FrameLayout
-import android.widget.ProgressBar
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
@@ -22,28 +20,40 @@ import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.feature.pwa.ManifestStorage
 import mozilla.components.feature.pwa.ext.putUrlOverride
 import mozilla.components.feature.pwa.intent.WebAppIntentProcessor.Companion.ACTION_VIEW_PWA
+import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
+import org.mozilla.fenix.ext.components
 
 /**
  * Launcher entry point. Opens [VidframeConfig.START_URL] as a standalone web app, which in Fenix means a single
  * external-app session without address bar, search, tabs tray or home screen. Re-launching reuses the existing session.
  *
- * On first run the page load is held back until uBlock Origin is installed (at most [VidframeConfig.UBO_WAIT_MS]), so
- * the very first page is already filtered. The stored web-app manifest is rewritten on every start, which keeps the
- * start page fixed even if the site publishes a manifest of its own.
+ * Start-up path, kept as short as possible:
+ * - the system splash screen (Theme.Vidframe.Launcher) is shown from the first frame and kept until the web app is
+ *   started, so there is no blank window;
+ * - the web-app intent is processed here and [ExternalAppBrowserActivity] is started directly, skipping the
+ *   IntentReceiverActivity trampoline;
+ * - the pinned manifest is verified once per process, and the first page load waits for uBlock Origin only on the
+ *   very first run (at most [VidframeConfig.UBO_WAIT_MS]).
  */
 class VidframeLauncherActivity : Activity() {
     private val scope = MainScope()
+    private var started = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen().setKeepOnScreenCondition { !started }
         super.onCreate(savedInstanceState)
+
+        if (manifestPinned && VidframeIntegration.uboReady.value) {
+            openWebApp()
+            return
+        }
         scope.launch {
             if (!VidframeIntegration.uboReady.value) {
-                showProgress()
                 withTimeoutOrNull(VidframeConfig.UBO_WAIT_MS) { VidframeIntegration.uboReady.first { it } }
             }
-            pinManifestIfNeeded()
-            startActivity(buildWebAppIntent(packageName, intent?.data?.toString()))
-            finish()
+            pinManifest()
+            openWebApp()
         }
     }
 
@@ -52,34 +62,33 @@ class VidframeLauncherActivity : Activity() {
         scope.cancel()
     }
 
-    /**
-     * Restores the pinned web-app manifest when it is missing or was changed (for example after clearing site data).
-     * The usual start only reads it, which keeps the launcher hop short.
-     */
-    private suspend fun pinManifestIfNeeded() {
+    private fun openWebApp() {
+        val webApp = buildWebAppIntent(packageName, intent?.data?.toString())
+        val processed = components.intentProcessors.externalAppIntentProcessors.any { it.process(webApp) }
+        if (processed) {
+            components.core.engine.speculativeCreateSession(private = false)
+            webApp.setClassName(this, ExternalAppBrowserActivity::class.java.name)
+            webApp.putExtra(HomeActivity.OPEN_TO_BROWSER, true)
+        }
+        started = true
+        startActivity(webApp, ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, 0).toBundle())
+        finish()
+    }
+
+    /** Restores the pinned web-app manifest when it is missing or was changed, for example after clearing data. */
+    private suspend fun pinManifest() {
         val storage = ManifestStorage(applicationContext)
         if (storage.loadManifest(VidframeConfig.START_URL) != MANIFEST) {
             storage.saveManifest(MANIFEST)
         }
-    }
-
-    private fun showProgress() {
-        setContentView(
-            FrameLayout(this).apply {
-                setBackgroundColor(Color.BLACK)
-                addView(
-                    ProgressBar(this@VidframeLauncherActivity).apply { isIndeterminate = true },
-                    FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.WRAP_CONTENT,
-                        FrameLayout.LayoutParams.WRAP_CONTENT,
-                        Gravity.CENTER,
-                    ),
-                )
-            },
-        )
+        manifestPinned = true
     }
 
     companion object {
+        /** Set once the manifest has been verified in this process; later launches skip the database. */
+        @Volatile private var manifestPinned = false
+
+        /** Colours come from the app theme (light or dark), so the manifest pins none. */
         @VisibleForTesting
         internal val MANIFEST =
             WebAppManifest(
@@ -88,8 +97,6 @@ class VidframeLauncherActivity : Activity() {
                 startUrl = VidframeConfig.START_URL,
                 scope = VidframeConfig.SCOPE,
                 display = WebAppManifest.DisplayMode.STANDALONE,
-                backgroundColor = Color.BLACK,
-                themeColor = Color.BLACK,
             )
 
         /**

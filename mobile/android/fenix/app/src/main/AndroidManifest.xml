@@ -567,7 +567,7 @@
 
         <activity
             android:name=".vidframe.VidframeLauncherActivity"
-            android:theme="@style/Theme.Transparent"
+            android:theme="@style/Theme.Vidframe.Launcher"
             android:exported="true"
             android:excludeFromRecents="true"
             android:noHistory="true">

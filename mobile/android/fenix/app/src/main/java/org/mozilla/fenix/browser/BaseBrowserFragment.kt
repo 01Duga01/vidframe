@@ -75,6 +75,7 @@ import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.storage.Address
@@ -256,6 +257,7 @@ import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.utils.allowUndo
+import org.mozilla.fenix.vidframe.VidframePictureInPicture
 import org.mozilla.fenix.wifi.SitePermissionsWifiIntegration
 
 /**
@@ -2158,7 +2160,12 @@ abstract class BaseBrowserFragment :
         val preferredColorScheme = components.core.getPreferredColorScheme()
         if (components.core.engine.settings.preferredColorScheme != preferredColorScheme) {
             components.core.engine.settings.preferredColorScheme = preferredColorScheme
-            components.useCases.sessionUseCases.reload()
+            // Vidframe: prefers-color-scheme updates live; never interrupt a playing video for a theme switch.
+            val isPlaying =
+                getSafeCurrentTab()?.mediaSessionState?.playbackState == MediaSession.PlaybackState.PLAYING
+            if (!isPlaying) {
+                components.useCases.sessionUseCases.reload()
+            }
         }
         hideToolbar()
 
@@ -2358,7 +2365,13 @@ abstract class BaseBrowserFragment :
         return requireComponents.core.store.state.findCustomTabOrSelectedTab(customTabSessionId)
     }
 
-    override fun onHomePressed() = pipFeature?.onHomePressed() ?: false
+    override fun onHomePressed(): Boolean {
+        if (pipFeature?.onHomePressed() == true) {
+            return true
+        }
+        val activity = activity ?: return false
+        return VidframePictureInPicture.onHomePressed(activity, getSafeCurrentTab())
+    }
 
     /** Exit fullscreen mode when exiting PIP mode */
     private fun pipModeChanged(session: SessionState) {

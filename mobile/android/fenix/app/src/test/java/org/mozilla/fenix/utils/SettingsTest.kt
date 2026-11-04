@@ -40,6 +40,7 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
+import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
 import org.mozilla.fenix.vidframe.VidframeConfig
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
@@ -58,7 +59,7 @@ class SettingsTest {
             location = ASK_TO_ALLOW,
             microphone = ASK_TO_ALLOW,
             notification = ASK_TO_ALLOW,
-            autoplayAudible = AutoplayAction.BLOCKED,
+            autoplayAudible = AutoplayAction.ALLOWED,
             autoplayInaudible = AutoplayAction.ALLOWED,
             persistentStorage = ASK_TO_ALLOW,
             mediaKeySystemAccess = ASK_TO_ALLOW,
@@ -654,10 +655,10 @@ class SettingsTest {
 
     @Test
     fun getSitePermissionsCustomSettingsRules_autoplayAudible() {
-        settings.setSitePermissionsPhoneFeatureAction(PhoneFeature.AUTOPLAY_AUDIBLE, ALLOWED)
+        settings.setSitePermissionsPhoneFeatureAction(PhoneFeature.AUTOPLAY_AUDIBLE, BLOCKED)
 
         assertEquals(
-            defaultPermissions.copy(autoplayAudible = AutoplayAction.ALLOWED),
+            defaultPermissions.copy(autoplayAudible = AutoplayAction.BLOCKED),
             settings.getSitePermissionsCustomSettingsRules(),
         )
     }
@@ -676,10 +677,12 @@ class SettingsTest {
     fun getSitePermissionsCustomSettingsRules_autoplay_defaults() {
         val settings = Settings(testContext)
 
+        // Vidframe: audible autoplay is allowed by default.
         assertEquals(
-            AutoplayAction.BLOCKED,
+            AutoplayAction.ALLOWED,
             settings.getSitePermissionsCustomSettingsRules().autoplayAudible,
         )
+        assertEquals(AUTOPLAY_ALLOW_ALL, settings.getAutoplayUserSetting())
 
         assertEquals(
             AutoplayAction.ALLOWED,

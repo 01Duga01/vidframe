@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- System splash screen of the launcher (Android 12+ natively, AndroidX backport below). -->
+    <style name="Theme.Vidframe.Launcher" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/vidframe_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/vidframe_splash_icon_animated</item>
+        <item name="windowSplashScreenAnimationDuration">700</item>
+        <item name="postSplashScreenTheme">@style/Theme.Transparent</item>
+    </style>
+</resources>

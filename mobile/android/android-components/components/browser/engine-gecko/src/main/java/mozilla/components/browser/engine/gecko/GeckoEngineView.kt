@@ -280,7 +280,8 @@ constructor(
     override fun removeWindowInsetsListener(key: String) = geckoView.removeWindowInsetsListener(key)
 
     companion object {
-        internal const val DARK_COVER = 0xFF2A2A2E.toInt()
+        // Vidframe: the video site's dark background, so the cover and the first paint have the same colour.
+        internal const val DARK_COVER = 0xFF0F0F0F.toInt()
     }
 
     override fun setAccessibilityTraversalAfter(afterId: Int) {

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.components.Components
+import org.mozilla.fenix.vidframe.dpi.DpiBypass
 
 /** Single startup hook for all Vidframe features, called from FenixApplication after add-on support is ready. */
 object VidframeIntegration {
@@ -20,6 +21,10 @@ object VidframeIntegration {
         get() = provisioner?.ready ?: MutableStateFlow(true)
 
     fun start(context: Context, components: Components) {
+        // Preconnect only once the DPI bypass (if any) is in place, so early connections take the same route.
+        DpiBypass.start(context, components.core.engine) {
+            VidframeConfig.PRECONNECT_URLS.forEach { components.core.engine.speculativeConnect(it) }
+        }
         VideoCodecTuning.apply(context, components.core.engine)
         DohFailover(context, components.core.engine, components.settings).start()
         provisioner =

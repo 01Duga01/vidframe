@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Matches the site's light background and the engine's light cover, so start-up has no colour jumps. -->
+    <color name="vidframe_splash_background">#FFFFFF</color>
+    <color name="vidframe_brand_start">#5B3DF5</color>
+    <color name="vidframe_brand_end">#00B3A4</color>
+</resources>

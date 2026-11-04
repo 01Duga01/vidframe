@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Splash icon: 240dp canvas, content inside the 160dp circle the system keeps visible. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <group
+        android:name="badge"
+        android:pivotX="120"
+        android:pivotY="120">
+        <path
+            android:name="disc"
+            android:pathData="M40,120a80,80 0,1 0,160 0a80,80 0,1 0,-160 0">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="60"
+                    android:startY="60"
+                    android:endX="180"
+                    android:endY="180"
+                    android:startColor="@color/vidframe_brand_start"
+                    android:endColor="@color/vidframe_brand_end" />
+            </aapt:attr>
+        </path>
+        <path
+            android:name="frame"
+            android:pathData="M91,90h58a16,16 0,0 1,16 16v28a16,16 0,0 1,-16 16h-58a16,16 0,0 1,-16 -16v-28a16,16 0,0 1,16 -16z"
+            android:strokeWidth="10"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineJoin="round" />
+        <path
+            android:name="mark"
+            android:pathData="M97,106L120,136L143,106"
+            android:strokeWidth="10"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

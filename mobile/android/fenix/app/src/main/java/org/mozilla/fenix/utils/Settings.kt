@@ -72,8 +72,8 @@ import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.mozilla.fenix.settings.registerOnSharedPreferenceChangeListener
+import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
-import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.termsofuse.TOU_VERSION
 import org.mozilla.fenix.vidframe.VidframeConfig
@@ -1319,7 +1319,7 @@ class Settings(
         return Browsers.isDefaultBrowser(appContext)
     }
 
-    val shouldUseAutoBatteryTheme by
+    var shouldUseAutoBatteryTheme by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_auto_battery_theme),
             default = false,
@@ -1892,7 +1892,8 @@ class Settings(
      * they will be indistinguishable from either [AUTOPLAY_ALLOW_ALL] or [AUTOPLAY_BLOCK_ALL]. Because of this, we are
      * forced to save the user selected setting as well.
      */
-    fun getAutoplayUserSetting() = preferences.getInt(AUTOPLAY_USER_SETTING, AUTOPLAY_BLOCK_AUDIBLE)
+    // Vidframe: a video client plays with sound by default (also needed by the miniplayer started on navigation).
+    fun getAutoplayUserSetting() = preferences.getInt(AUTOPLAY_USER_SETTING, AUTOPLAY_ALLOW_ALL)
 
     private fun getSitePermissionsPhoneFeatureAutoplayAction(
         feature: PhoneFeature,
@@ -1916,7 +1917,7 @@ class Settings(
             autoplayAudible =
                 getSitePermissionsPhoneFeatureAutoplayAction(
                     feature = PhoneFeature.AUTOPLAY_AUDIBLE,
-                    default = AutoplayAction.BLOCKED,
+                    default = AutoplayAction.ALLOWED,
                 ),
             autoplayInaudible =
                 getSitePermissionsPhoneFeatureAutoplayAction(
