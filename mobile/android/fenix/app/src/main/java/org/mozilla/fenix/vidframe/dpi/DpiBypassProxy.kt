@@ -15,6 +15,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -22,20 +23,33 @@ import java.util.concurrent.atomic.AtomicInteger
  * record of every TLS connection and relays everything else unchanged. Gecko is pointed at it, so the bypass works
  * inside the app without root and without a VPN. Gecko resolves names itself (over DoH) and passes IP addresses.
  *
+ * Resource use is bounded because the video site opens and abandons many connections (Shorts preloading): each
+ * connection uses two small-stack threads and 16 KiB buffers, a connection is torn down completely as soon as either
+ * side ends it, at most [maxConnections] are relayed at once, and no exception can escape a worker thread (on
+ * Android an uncaught exception in any thread kills the whole app).
+ *
  * Pure JVM code without Android dependencies.
  */
 class DpiBypassProxy(
     private val strategy: TlsDesync.Strategy = TlsDesync.Strategy(),
     private val connectTimeoutMs: Int = CONNECT_TIMEOUT_MS,
     private val desyncPorts: Set<Int> = setOf(HTTPS_PORT),
+    private val maxConnections: Int = MAX_CONNECTIONS,
     private val log: (String, Throwable?) -> Unit = { _, _ -> },
 ) : Closeable {
     private val server = ServerSocket(0, BACKLOG, InetAddress.getByName(LOOPBACK))
     private val threadCount = AtomicInteger()
+    private val activeConnections = AtomicInteger()
     private val pool: ExecutorService =
         Executors.newCachedThreadPool { runnable ->
-            Thread(runnable, "vidframe-dpi-${threadCount.incrementAndGet()}").apply { isDaemon = true }
+            Thread(null, runnable, "vidframe-dpi-${threadCount.incrementAndGet()}", THREAD_STACK_BYTES).apply {
+                isDaemon = true
+            }
         }
+
+    /** Connections currently being relayed. */
+    val connectionCount: Int
+        get() = activeConnections.get()
 
     /** Port the proxy listens on, on [LOOPBACK]. */
     val port: Int
@@ -60,48 +74,75 @@ class DpiBypassProxy(
                     if (!server.isClosed) log("accept failed", e)
                     return
                 }
-            pool.execute { handle(client) }
+            if (activeConnections.incrementAndGet() > maxConnections) {
+                activeConnections.decrementAndGet()
+                log("connection limit reached, refusing", null)
+                runCatching { client.close() }
+                continue
+            }
+            val submitted = runCatching { pool.execute { handle(client) } }.isSuccess
+            if (!submitted) {
+                activeConnections.decrementAndGet()
+                runCatching { client.close() }
+            }
         }
     }
 
     private fun handle(client: Socket) {
-        var upstream: Socket? = null
+        val connection = Connection(client)
         try {
             client.tcpNoDelay = true
             val input = DataInputStream(client.getInputStream().buffered(BUFFER))
             val output = client.getOutputStream()
             val target = readConnectRequest(input, output)
             if (target == null) {
-                client.close()
+                connection.close()
                 return
             }
 
-            val connected =
+            val upstream =
                 Socket().apply {
                     tcpNoDelay = true
-                    connect(target, connectTimeoutMs)
+                    keepAlive = true
                 }
-            upstream = connected
+            connection.upstream = upstream
+            try {
+                upstream.connect(target, connectTimeoutMs)
+            } catch (e: IOException) {
+                runCatching { output.write(REPLY_HOST_UNREACHABLE) }
+                connection.close()
+                return
+            }
             output.write(REPLY_SUCCEEDED)
             output.flush()
 
-            val pair = Pair(client, connected)
-            val remaining = AtomicInteger(2)
             pool.execute {
-                pump(connected.getInputStream(), output)
-                finishDirection(pair, toUpstream = false, remaining)
+                runCatching { pump(upstream.getInputStream(), output) }
+                connection.close()
             }
             if (target.port in desyncPorts) {
-                sendFirstRecord(input, connected.getOutputStream())
+                sendFirstRecord(input, upstream.getOutputStream())
             }
-            pump(input, connected.getOutputStream())
-            finishDirection(pair, toUpstream = true, remaining)
-        } catch (e: IOException) {
-            if (upstream == null) {
-                runCatching { client.getOutputStream().write(REPLY_HOST_UNREACHABLE) }
+            pump(input, upstream.getOutputStream())
+        } catch (e: Exception) {
+            // Includes RejectedExecutionException after close() and anything unexpected: never let it escape.
+            if (e !is IOException) log("connection failed", e)
+        } finally {
+            connection.close()
+        }
+    }
+
+    /** Both sockets of one relayed connection; closing is idempotent and releases the connection slot once. */
+    private inner class Connection(private val client: Socket) {
+        @Volatile var upstream: Socket? = null
+        private val closed = AtomicBoolean(false)
+
+        fun close() {
+            if (closed.compareAndSet(false, true)) {
+                runCatching { client.close() }
+                runCatching { upstream?.close() }
+                activeConnections.decrementAndGet()
             }
-            runCatching { client.close() }
-            runCatching { upstream?.close() }
         }
     }
 
@@ -156,6 +197,7 @@ class DpiBypassProxy(
         }
     }
 
+    /** Copies until end of stream or error; the caller then closes the whole connection. */
     private fun pump(from: InputStream, to: OutputStream) {
         val buffer = ByteArray(BUFFER)
         try {
@@ -164,25 +206,17 @@ class DpiBypassProxy(
                 if (read < 0) return
                 to.write(buffer, 0, read)
             }
-        } catch (e: IOException) {
-            // Connection reset or closed by the other direction.
-        }
-    }
-
-    /** Half-closes the finished direction; the sockets are closed once both directions are done. */
-    private fun finishDirection(pair: Pair<Socket, Socket>, toUpstream: Boolean, remaining: AtomicInteger) {
-        val (client, upstream) = pair
-        runCatching { if (toUpstream) upstream.shutdownOutput() else client.shutdownOutput() }
-        if (remaining.decrementAndGet() == 0) {
-            runCatching { client.close() }
-            runCatching { upstream.close() }
+        } catch (e: Exception) {
+            // Connection reset, or closed because the other direction finished.
         }
     }
 
     companion object {
         const val LOOPBACK = "127.0.0.1"
         private const val BACKLOG = 128
-        private const val BUFFER = 64 * 1024
+        private const val BUFFER = 16 * 1024
+        private const val THREAD_STACK_BYTES = 256L * 1024
+        private const val MAX_CONNECTIONS = 384
         private const val CONNECT_TIMEOUT_MS = 10_000
         private const val HTTPS_PORT = 443
         private const val RECORD_HEADER_SIZE = 5

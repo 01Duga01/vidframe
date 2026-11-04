@@ -34,7 +34,7 @@ import org.mozilla.fenix.ext.components
  * - the web-app intent is processed here and [ExternalAppBrowserActivity] is started directly, skipping the
  *   IntentReceiverActivity trampoline;
  * - the pinned manifest is verified once per process, and the first page load waits for uBlock Origin only on the
- *   very first run (at most [VidframeConfig.UBO_WAIT_MS]).
+ *   very first run, and only briefly ([VidframeConfig.UBO_WAIT_MS]); a slower install reloads the page once instead.
  */
 class VidframeLauncherActivity : Activity() {
     private val scope = MainScope()
@@ -51,6 +51,7 @@ class VidframeLauncherActivity : Activity() {
         scope.launch {
             if (!VidframeIntegration.uboReady.value) {
                 withTimeoutOrNull(VidframeConfig.UBO_WAIT_MS) { VidframeIntegration.uboReady.first { it } }
+                VidframeIntegration.openedBeforeUbo = !VidframeIntegration.uboReady.value
             }
             pinManifest()
             openWebApp()

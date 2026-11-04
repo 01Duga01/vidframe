@@ -78,8 +78,8 @@ android {
         buildConfigField "boolean", "IS_BENCHMARK_BUILD", "false"
         // Vidframe navigation mode: "strict" (block page only) or "warn" (block page + hand-off to another browser).
         buildConfigField "String", "VIDFRAME_NAV_MODE", "\"${project.findProperty("vidframe.navMode") ?: "strict"}\""
-        // Vidframe page scale: web content is rendered at this fraction of the system density (0.5-1.0).
-        buildConfigField "float", "VIDFRAME_CONTENT_SCALE", "${project.findProperty("vidframe.contentScale") ?: "0.7"}f"
+        // Vidframe default page scale: "auto" (adapts to screen and font size) or a fixed 0.5-1.0. Users can change it.
+        buildConfigField "String", "VIDFRAME_CONTENT_SCALE", "\"${project.findProperty("vidframe.contentScale") ?: "auto"}\""
         // Vidframe in-app DPI bypass: "auto" (on for Russian networks/SIM/region), "on" or "off".
         buildConfigField "String", "VIDFRAME_DPI_BYPASS", "\"${project.findProperty("vidframe.dpiBypass") ?: "auto"}\""
     }
@@ -290,14 +290,17 @@ android {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Vidframe: release builds must ship uBlock Origin (fetched by vidframe/scripts/fetch-ubo.sh).
+// Vidframe: every APK must ship uBlock Origin (fetched by vidframe/scripts/fetch-ubo.sh), debug ones
+// included, otherwise the client silently runs without a blocker. Unit tests do not package and are
+// unaffected. -Pvidframe.allowMissingUbo skips the check for development builds.
 // -------------------------------------------------------------------------------------------------
 
 def vidframeUboXpi = file("src/main/assets/extensions/ublock_origin.xpi")
-tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+def vidframeRequireUbo = !project.hasProperty("vidframe.allowMissingUbo")
+tasks.matching { vidframeRequireUbo && (it.name ==~ /package(Debug|Release|Nightly|Beta)/) }.configureEach {
     doFirst {
         if (!vidframeUboXpi.isFile() || vidframeUboXpi.length() == 0L) {
-            throw new GradleException("Missing ${vidframeUboXpi}: run vidframe/scripts/fetch-ubo.sh before assembleRelease")
+            throw new GradleException("Missing ${vidframeUboXpi}: run vidframe/scripts/fetch-ubo.sh before building an APK")
         }
     }
 }

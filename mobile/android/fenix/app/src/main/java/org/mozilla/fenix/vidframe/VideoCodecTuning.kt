@@ -38,9 +38,12 @@ object VideoCodecTuning {
 
     private val softwareCodecPrefixes = listOf("OMX.google.", "c2.android.", "c2.google.", "OMX.ffmpeg.", "c2.ffmpeg.")
 
+    /** Scans (or reads the cached scan of) the decoders and applies the result. */
+    fun apply(context: Context, engine: Engine) = apply(engine, hasHardwareAv1Decoder(context))
+
+    /** Applies a scan result from [hasHardwareAv1Decoder], which may have run on a background thread. */
     @OptIn(ExperimentalAndroidComponentsApi::class)
-    fun apply(context: Context, engine: Engine) {
-        val hardwareAv1 = hasHardwareAv1Decoder(context)
+    fun apply(engine: Engine, hardwareAv1: Boolean) {
         logger.info("Hardware AV1 decoder: $hardwareAv1")
         if (hardwareAv1) {
             return
@@ -54,7 +57,8 @@ object VideoCodecTuning {
         )
     }
 
-    private fun hasHardwareAv1Decoder(context: Context): Boolean {
+    /** Safe to call from any thread. */
+    fun hasHardwareAv1Decoder(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         if (prefs.getString(KEY_FINGERPRINT, null) == Build.FINGERPRINT) {
             return prefs.getBoolean(KEY_HW_AV1, false)

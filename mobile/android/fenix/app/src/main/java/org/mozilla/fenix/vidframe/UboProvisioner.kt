@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
+import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,6 @@ import mozilla.components.concept.engine.webextension.PermissionPromptResponse
 import mozilla.components.feature.addons.AddonManager
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
-import java.io.File
 
 /**
  * Installs the AMO-signed uBlock Origin XPI shipped in the APK assets on first run.
@@ -43,6 +43,7 @@ class UboProvisioner(
     private val addonManager: AddonManager,
     private val scope: CoroutineScope = MainScope(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val onInstalled: () -> Unit = {},
 ) {
     private val logger = Logger("VidframeUbo")
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -70,6 +71,7 @@ class UboProvisioner(
                     prefs.edit { putBoolean(KEY_PROVISIONED, true) }
                     xpi.delete()
                     _ready.value = true
+                    onInstalled()
                 },
                 onError = {
                     logger.error("uBO install failed", it)

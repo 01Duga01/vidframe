@@ -157,3 +157,18 @@ a[href^="vnd.youtube:"] {
     height: 0 !important;
   }
 }
+
+/* Miniplayer whose embed refused the video: an icon-sized placeholder next to the explanation. */
+.vf-mini-media-error {
+  background: #3a3a3a;
+}
+.vf-mini-media-error::after {
+  content: "!";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font: 700 24px/1 Roboto, system-ui, sans-serif;
+}

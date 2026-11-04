@@ -7,6 +7,7 @@ package org.mozilla.fenix.vidframe.dpi
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -92,6 +93,64 @@ class DpiBypassProxyTest {
         }
 
         assertArrayEquals(payload, received.get(5, TimeUnit.SECONDS))
+    }
+
+    private fun waitUntil(timeoutMs: Long = 3000, condition: () -> Boolean): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (condition()) return true
+            Thread.sleep(20)
+        }
+        return condition()
+    }
+
+    @Test
+    fun `an abandoned connection is torn down although the server keeps its side open`() {
+        val serverSide = CompletableFuture.supplyAsync { upstream.accept() }
+
+        connectThroughProxy().use { client ->
+            client.getOutputStream().write(clientHello("rr1---sn-abc.googlevideo.com"))
+            assertTrue(waitUntil { proxy.connectionCount == 1 })
+        }
+
+        // The browser dropped the connection (Shorts preloading does this a lot); the server never closes. The proxy
+        // must still release both sockets and its threads instead of waiting for the server.
+        assertTrue("connection slot released", waitUntil { proxy.connectionCount == 0 })
+        val held = serverSide.get(5, TimeUnit.SECONDS)
+        held.soTimeout = 3000
+        held.getInputStream().readBytes() // returns only once the proxy has closed its side
+        held.close()
+    }
+
+    @Test
+    fun `connections beyond the limit are refused instead of exhausting threads`() {
+        proxy.close()
+        proxy = DpiBypassProxy(desyncPorts = emptySet(), maxConnections = 1).start()
+        val serverSide = CompletableFuture.supplyAsync { upstream.accept() }
+
+        connectThroughProxy().use {
+            assertTrue(waitUntil { proxy.connectionCount == 1 })
+            Socket(DpiBypassProxy.LOOPBACK, proxy.port).use { extra ->
+                extra.soTimeout = 3000
+                assertEquals("refused connection is closed", -1, extra.getInputStream().read())
+            }
+        }
+        serverSide.get(5, TimeUnit.SECONDS).close()
+    }
+
+    @Test
+    fun `an unreachable target gets a SOCKS error reply and frees the slot`() {
+        val closedPort = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { it.localPort }
+        Socket(DpiBypassProxy.LOOPBACK, proxy.port).use { socket ->
+            val out = socket.getOutputStream()
+            val input = DataInputStream(socket.getInputStream())
+            out.write(byteArrayOf(5, 1, 0))
+            input.readFully(ByteArray(2))
+            out.write(byteArrayOf(5, 1, 0, 1, 127, 0, 0, 1, (closedPort ushr 8).toByte(), closedPort.toByte()))
+            val reply = ByteArray(10).also(input::readFully)
+            assertEquals(4, reply[1].toInt())
+        }
+        assertTrue(waitUntil { proxy.connectionCount == 0 })
     }
 
     @Test

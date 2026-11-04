@@ -7,13 +7,13 @@ package org.mozilla.fenix.vidframe.dpi
 import android.content.Context
 import android.telephony.TelephonyManager
 import androidx.annotation.VisibleForTesting
+import java.util.Locale
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.preferences.Branch
 import mozilla.components.concept.engine.preferences.SetBrowserPreference
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.BuildConfig
-import java.util.Locale
 
 /**
  * In-app DPI bypass: starts [DpiBypassProxy] and routes Gecko through it. Works without root and without a VPN

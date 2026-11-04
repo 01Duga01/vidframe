@@ -17,6 +17,10 @@
   const SNAP = 0.08;
   const TICK_MS = 500;
   const OWN_PLAYER_GRACE_MS = 900;
+  const LISTEN_RETRY_MS = 250;
+  const LISTEN_MAX_TRIES = 40;
+  const ERROR_AUTOCLOSE_MS = 8000;
+  const log = (...args) => console.info("[vidframe]", ...args);
 
   const toast = (() => {
     let el;
@@ -211,6 +215,7 @@
       rel: "0",
       start: String(Math.max(0, Math.floor(start))),
       origin: location.origin,
+      widget_referrer: location.href,
     });
     return `https://www.youtube.com/embed/${encodeURIComponent(id)}?${params}`;
   }
@@ -258,13 +263,39 @@
     link.remove();
   }
 
-  function closeMini() {
+  function closeMini(reason) {
     if (!mini) {
       return;
     }
+    log("miniplayer closed:", reason);
+    clearInterval(mini.listenTimer);
+    clearTimeout(mini.errorTimer);
     mini.bar.remove();
     window.removeEventListener("message", mini.onMessage);
     mini = null;
+  }
+
+  /**
+   * The embedded player refused this video (codes 101/150: the owner disabled embedding; 153: the request arrived
+   * without a referrer; 100: removed or private). Keep the bar, say why, and offer the full watch page instead of
+   * vanishing.
+   */
+  function showMiniError(code) {
+    log("miniplayer embed error", code);
+    const current = mini;
+    current.failed = true;
+    current.frame.remove();
+    current.media.classList.add("vf-mini-media-error");
+    current.title.textContent =
+      code === 101 || code === 150
+        ? "Автор запретил мини-плеер для этого видео. Нажмите, чтобы открыть."
+        : `Мини-плеер недоступен (ошибка ${code}). Нажмите, чтобы открыть видео.`;
+    current.playPause.hidden = true;
+    current.errorTimer = setTimeout(() => {
+      if (mini === current) {
+        closeMini("error timeout");
+      }
+    }, ERROR_AUTOCLOSE_MS);
   }
 
   function showMini(state) {
@@ -279,8 +310,10 @@
     const media = document.createElement("div");
     media.className = "vf-mini-media";
     const frame = document.createElement("iframe");
-    frame.src = embedUrl(state.id, state.time);
+    // The embedded player needs the embedding origin as referrer (otherwise error 153).
+    frame.referrerPolicy = "strict-origin-when-cross-origin";
     frame.allow = "autoplay; encrypted-media; picture-in-picture";
+    frame.src = embedUrl(state.id, state.time);
     frame.title = state.title;
     const shield = document.createElement("div");
     shield.className = "vf-mini-shield";
@@ -291,16 +324,31 @@
     title.textContent = state.title;
 
     const playPause = button("Пауза", "pause", () => sendCommand(mini.playing ? "pauseVideo" : "playVideo"));
-    const close = button("Закрыть", "close", closeMini);
+    const close = button("Закрыть", "close", () => closeMini("close button"));
 
     bar.append(media, title, playPause, close);
     document.body.appendChild(bar);
 
-    mini = { bar, frame, playPause, id: state.id, time: state.time, playing: true, onMessage: null };
+    mini = {
+      bar,
+      media,
+      frame,
+      title,
+      playPause,
+      id: state.id,
+      time: state.time,
+      playing: true,
+      failed: false,
+      connected: false,
+      onMessage: null,
+      listenTimer: 0,
+      errorTimer: 0,
+    };
+    log("miniplayer shown for", state.id, "at", Math.floor(state.time));
 
     const expand = () => {
       const { id, time } = mini;
-      closeMini();
+      closeMini("expand");
       openWatchPage(id, time);
     };
     shield.addEventListener("click", expand);
@@ -317,8 +365,12 @@
         return;
       }
       if (data.event === "onError") {
-        closeMini();
+        showMiniError(Number(data.info));
         return;
+      }
+      if (!mini.connected) {
+        mini.connected = true;
+        clearInterval(mini.listenTimer);
       }
       const info = data.info;
       if (data.event !== "infoDelivery" || !info) {
@@ -334,15 +386,31 @@
       }
     };
     window.addEventListener("message", mini.onMessage);
-    frame.addEventListener("load", () =>
-      frame.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: "vf-mini", channel: "widget" }), "*")
-    );
+
+    // The embed only reports state after a "listening" handshake, and only once its own script runs, which can be
+    // after the frame's load event. Repeat the handshake until the first message arrives.
+    const current = mini;
+    let tries = 0;
+    const listen = () => {
+      if (mini !== current || current.connected || current.failed || ++tries > LISTEN_MAX_TRIES) {
+        clearInterval(current.listenTimer);
+        return;
+      }
+      current.frame.contentWindow?.postMessage(
+        JSON.stringify({ event: "listening", id: "vf-mini", channel: "widget" }),
+        "*"
+      );
+    };
+    frame.addEventListener("load", listen);
+    current.listenTimer = setInterval(listen, LISTEN_RETRY_MS);
   }
 
   setInterval(() => {
     const id = watchVideoId();
     if (id) {
-      closeMini();
+      if (mini) {
+        closeMini("watch page opened");
+      }
       const video = findMainVideo();
       if (video && video.duration) {
         watched = { id, time: video.currentTime, playing: !video.paused && !video.ended, title: cleanTitle() };

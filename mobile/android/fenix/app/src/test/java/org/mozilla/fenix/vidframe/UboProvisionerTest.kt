@@ -78,6 +78,28 @@ class UboProvisionerTest {
         }
 
     @Test
+    fun `GIVEN a first run WHEN the install succeeds THEN the onInstalled hook runs once, and not on failure`() =
+        runTest(testDispatcher) {
+            val onSuccess = slot<(Addon) -> Unit>()
+            every { addonManager.installAddon(any(), any(), capture(onSuccess), any()) } returns mockk()
+            var installed = 0
+            UboProvisioner(
+                    context,
+                    store,
+                    addonManager,
+                    scope = backgroundScope,
+                    ioDispatcher = testDispatcher,
+                    onInstalled = { installed++ },
+                )
+                .start()
+            testScheduler.runCurrent()
+
+            assertEquals(0, installed)
+            onSuccess.captured(Addon(id = VidframeConfig.UBO_ID, version = "1.0"))
+            assertEquals(1, installed)
+        }
+
+    @Test
     fun `GIVEN uBlock Origin was provisioned before WHEN started THEN it is not reinstalled`() =
         runTest(testDispatcher) {
             testContext

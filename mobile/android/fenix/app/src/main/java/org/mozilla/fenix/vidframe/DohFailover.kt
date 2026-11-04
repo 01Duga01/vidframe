@@ -7,6 +7,8 @@ package org.mozilla.fenix.vidframe
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,8 +17,6 @@ import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.Engine
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.utils.Settings
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * Keeps Gecko in TRR-only mode and switches the resolver to the next healthy endpoint of
