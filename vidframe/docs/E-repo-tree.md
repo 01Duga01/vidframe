@@ -50,7 +50,8 @@
             │   │   ├── AppRequestInterceptor.kt       (mod) вызов VidframeRequestInterceptor, без app links
             │   │   ├── FeatureFlags.kt                (mod) onboarding выключен
             │   │   ├── extension/WebExtensionPromptFeature.kt (mod) без диалогов для uBO (UboProvisioner.autoAccept)
-            │   │   ├── FenixApplication.kt            (mod) VidframeIntegration.start()
+            │   │   ├── FenixApplication.kt            (mod) VidframeIntegration.start(), без превью поисковых виджетов
+            │   │   ├── HomeActivity.kt                (mod) VidframeHomeGuard.install()
             │   │   ├── settings/about/AboutFragment.kt (mod) дисклеймер
             │   │   ├── utils/Settings.kt              (mod) значения по умолчанию (телеметрия, DoH, Pocket, ToU, HTTPS-only)
             │   │   └── vidframe/                      (new)
@@ -59,11 +60,19 @@
             │   │       ├── VidframeRequestInterceptor.kt  блокировка, страницы strict/warn, внешний chooser
             │   │       ├── DohFailover.kt             TRR-only + переключение endpoint по health-check
             │   │       ├── UboProvisioner.kt          первая установка uBO, автоподтверждение разрешений
-            │   │       ├── VidframeLauncherActivity.kt запуск m.youtube.com как standalone web-app
+            │   │       ├── VidframeLauncherActivity.kt запуск m.youtube.com как standalone web-app, ожидание uBO
+            │   │       ├── VidframeHomeGuard.kt       домашний экран/тулбар/вкладки Fenix → стартовая страница
             │   │       └── VidframeIntegration.kt     единая точка старта
-            │   └── res/values/vidframe_strings.xml    (new) дисклеймер, подписи ярлыков
+            │   └── res/
+            │       ├── values/vidframe_strings.xml    (new) дисклеймер, подписи ярлыков
+            │       └── xml/preferences.xml            (mod) пункт «Поиск» скрыт
             ├── test/java/org/mozilla/fenix/vidframe/
-            │   └── NavigationAllowlistTest.kt         (new) Robolectric-тесты allowlist и перехватчика
+            │   ├── NavigationAllowlistTest.kt         (new) allowlist и перехватчик
+            │   ├── UboProvisionerTest.kt              (new) установка uBO, автоответ на запросы, ready
+            │   ├── VidframeLauncherActivityTest.kt    (new) фиксированная стартовая страница
+            │   └── VidframeHomeGuardTest.kt           (new) недостижимость домашнего экрана и поиска
+            │   (mod) AppRequestInterceptorTest, SettingsTest, SettingsFragmentTest,
+            │         WebExtensionPromptFeatureTest, DefaultPrivacyPreferencesRepositoryTest
             └── release/res/
                 ├── values/static_strings.xml          (mod) app_name = Vidframe
                 ├── values/colors.xml                  (mod) цвет фона иконки

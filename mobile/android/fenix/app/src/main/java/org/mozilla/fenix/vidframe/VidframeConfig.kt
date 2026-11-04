@@ -8,12 +8,16 @@ import org.mozilla.fenix.BuildConfig
 
 /** Build-time configuration of the Vidframe single-site client. */
 object VidframeConfig {
-    const val START_URL = "https://m.youtube.com/?app=m&persist_app=1"
+    /** Fixed start page. Every launcher start and every attempt to show the browser home screen lands here. */
+    const val START_URL = "https://m.youtube.com/"
     const val SCOPE = "https://m.youtube.com/"
     const val APP_TITLE = "Vidframe"
 
     const val UBO_ID = "uBlock0@raymondhill.net"
     const val UBO_ASSET = "extensions/ublock_origin.xpi"
+
+    /** Upper bound for holding the first page load until uBlock Origin is installed. */
+    const val UBO_WAIT_MS = 20_000L
 
     const val UI_EXTENSION_ID = "ui@vidframe"
     const val UI_EXTENSION_URL = "resource://android/assets/extensions/vidframe-ui/"

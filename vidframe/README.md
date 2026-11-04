@@ -16,13 +16,14 @@ Android-клиент для просмотра одного видеосерви
 
 | Функция | Реализация |
 |---|---|
-| Запуск сразу на `m.youtube.com` в одном окне без адресной строки и вкладок | `VidframeLauncherActivity` открывает сайт как standalone web-app (PWA-оболочка Fenix) |
+| Стартовая страница жёстко зафиксирована на `https://m.youtube.com/`, одно окно без адресной строки, поиска Fenix и вкладок | `VidframeLauncherActivity` открывает сайт как standalone web-app (PWA-оболочка Fenix) и перезаписывает манифест при каждом запуске; `VidframeHomeGuard` не даёт показать домашний экран, тулбар и вкладки Fenix |
 | Только разрешённые домены | `NavigationAllowlist` + `VidframeRequestInterceptor` (хук в `AppRequestInterceptor`) |
 | Режим `strict` / `warn` | Gradle-свойство `-Pvidframe.navMode=strict\|warn` |
-| uBlock Origin предустановлен, обновляется с AMO | `UboProvisioner` ставит подписанный XPI из assets, автоподтверждает разрешения |
+| uBlock Origin ставится до первой загрузки YouTube, обновляется с AMO | `UboProvisioner` ставит подписанный XPI из assets и сам отвечает на запрос разрешений; launcher ждёт его (до 20 с); release-сборка без XPI падает на `preReleaseBuild` |
 | DoH на AdGuard, TRR-only, failover | `vidframe-prefs.js` (с первого запроса) + `DohFailover` (рантайм) |
 | Телеметрия, Pocket, спонсорский контент выключены | Значения по умолчанию в `Settings.kt`, `vidframe-prefs.js` |
 | Настройки, uBO, история | Ярлыки долгого нажатия на иконку (`shortcuts.xml`) |
+| Поиск Fenix убран | Нет домашнего экрана и адресной строки; пункт «Поиск» в настройках скрыт; удалены виджеты поиска, `SEARCH`/`WEB_SEARCH`/`ASSIST` intent-фильтры и deep links `settings_search_engine`, `install_search_widget`. Поиск внутри самого сайта остаётся. |
 
 ## Где что лежит
 

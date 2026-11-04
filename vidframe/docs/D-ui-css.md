@@ -17,7 +17,9 @@
 | Нет Pocket, sponsored, рекомендаций | значения по умолчанию в `Settings.kt` (см. C). |
 | Нет синхронизации, телеметрии | Синхронизация не включается без входа в аккаунт Mozilla; телеметрия выключена по умолчанию. |
 | Не «браузер по умолчанию» | Из `IntentReceiverActivity` удалены фильтры `APP_BROWSER`, `http/https`, `SEND`, `WEB_SEARCH`, `ASSIST`, `NFC`. Ссылки на `youtube.com`, `www.`, `m.`, `youtu.be` принимает `VidframeLauncherActivity`. |
-| Поиск | Только внутри сайта (поле поиска m.youtube.com). Поиск Google закрыт allowlist'ом. |
+| Поиск Fenix | Убран полностью: домашний экран, адресная строка и тулбар HomeActivity недостижимы (`VidframeHomeGuard` при попытке их показать закрывает activity и открывает стартовую страницу); пункт «Поиск» в настройках скрыт (`preferences.xml`); виджеты поиска и intent-фильтры `SEARCH`/`WEB_SEARCH`/`ASSIST` удалены из манифеста. |
+| Поиск по видео | Только поле поиска самого m.youtube.com. Поиск Google закрыт allowlist'ом. Если нужно скрыть и его, добавьте в `vidframe-ui/m-youtube.css` правило для кнопки поиска сайта (`ytm-topbar-menu-button-renderer` / `button[aria-label*="Search"]`, проверьте на живом сайте). |
+| Стартовая страница | Жёстко `https://m.youtube.com/` (`VidframeConfig.START_URL`). Манифест web-app перезаписывается при каждом запуске, поэтому манифест сайта его не подменит; любые попытки уйти на домашний экран Fenix возвращают сюда. |
 | Логин | `accounts.google.com` в allowlist. Если навигация выходит за `scope` PWA, Fenix показывает узкую панель custom-tab с кнопкой «закрыть» (`WebAppHideToolbarFeature`), после логина пользователь возвращается в scope. |
 | История (локально) | Ярлык «История» → `vidframe://urls_history`. Хранится в `places` на устройстве, без синхронизации. |
 | Настройки uBO | Ярлык «Блокировщик» → `vidframe://settings_addon_manager` → uBO → «Настройки» (открывается `moz-extension://…/dashboard.html`). |

@@ -143,8 +143,7 @@ class WebExtensionPromptFeature(
 
     @VisibleForTesting
     internal fun handleAfterInstallationRequest(promptRequest: WebExtensionPromptRequest.AfterInstallation) {
-        if (UboProvisioner.autoAccept(promptRequest)) {
-            consumePromptRequest()
+        if (UboProvisioner.isHandledByProvisioner(promptRequest)) {
             return
         }
         val installedState = addonManager.toInstalledState(promptRequest.extension)

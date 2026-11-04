@@ -54,12 +54,12 @@ class NavigationAllowlistTest {
     fun `blocked subframes are denied silently and top-level loads get a block page`() {
         val interceptor = VidframeRequestInterceptor(testContext)
 
-        assertNull(interceptor.onLoadRequest("https://m.youtube.com/", hasUserGesture = true, isSubframeRequest = false))
+        assertNull(interceptor.onLoadRequest(VidframeConfig.START_URL, true, isSubframeRequest = false))
         assertEquals(
             InterceptionResponse.Deny,
             interceptor.onLoadRequest("https://ads.example/", hasUserGesture = false, isSubframeRequest = true),
         )
-        val page = interceptor.onLoadRequest("https://example.com/<x>", hasUserGesture = true, isSubframeRequest = false)
+        val page = interceptor.onLoadRequest("https://example.com/<x>", true, isSubframeRequest = false)
         assertTrue(page is InterceptionResponse.Content)
         assertFalse((page as InterceptionResponse.Content).data.contains("<x>"))
     }

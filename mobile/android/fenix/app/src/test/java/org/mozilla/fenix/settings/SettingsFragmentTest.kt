@@ -256,6 +256,13 @@ class SettingsFragmentTest {
     }
 
     @Test
+    fun `GIVEN the Vidframe client THEN the search settings entry is hidden`() {
+        val searchPreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_search_settings)
+
+        assertFalse(searchPreference.isVisible)
+    }
+
+    @Test
     fun `WHEN a custom search engine is set as default THEN it's name is set as summary for search preference`() {
         val searchEngineName = "MySearchEngine"
         val searchPreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_search_settings)

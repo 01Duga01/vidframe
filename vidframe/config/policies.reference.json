@@ -1,7 +1,7 @@
 {
   "policies": {
     "Homepage": {
-      "URL": "https://m.youtube.com/?app=m&persist_app=1",
+      "URL": "https://m.youtube.com/",
       "Locked": true,
       "StartPage": "homepage-locked"
     },

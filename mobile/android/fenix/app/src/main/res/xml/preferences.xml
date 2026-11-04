@@ -40,7 +40,8 @@
         <androidx.preference.Preference
             app:iconSpaceReserved="false"
             android:key="@string/pref_key_search_settings"
-            android:title="@string/preferences_search" />
+            android:title="@string/preferences_search"
+            app:isPreferenceVisible="false" />
 
         <androidx.preference.Preference
             app:iconSpaceReserved="false"
