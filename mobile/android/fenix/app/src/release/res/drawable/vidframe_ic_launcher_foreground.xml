@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Neutral film-frame mark. Deliberately avoids the red rounded rectangle + white triangle trade dress. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,36h40a4,4 0,0 1,4 4v28a4,4 0,0 1,-4 4h-40a4,4 0,0 1,-4 -4v-28a4,4 0,0 1,4 -4zM38,42v24h32v-24z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,39h3v3h-3zM33,48h3v3h-3zM33,57h3v3h-3zM33,66h3v3h-3zM72,39h3v3h-3zM72,48h3v3h-3zM72,57h3v3h-3zM72,66h3v3h-3z" />
+</vector>

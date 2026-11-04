@@ -1,0 +1,67 @@
+# Vidframe
+
+Android-клиент для просмотра одного видеосервиса (мобильная версия
+`m.youtube.com`), собранный из исходников Firefox for Android (Fenix) с
+движком GeckoView. Только Android (arm64-v8a, опционально armeabi-v7a).
+
+> **Независимость проекта.** Vidframe — независимый проект с открытым
+> исходным кодом. Он не связан с Google LLC, YouTube и Mozilla, не одобрен и
+> не спонсируется ими. YouTube — товарный знак Google LLC. Firefox — товарный
+> знак Mozilla Foundation; Vidframe собирается из исходного кода Firefox for
+> Android (MPL-2.0) с неофициальным брендингом и **не является** Firefox.
+> uBlock Origin (GPL-3.0) поставляется как универсальный блокировщик
+> контента, включённый по умолчанию; проект не обещает «обход рекламы».
+
+## Что делает клиент
+
+| Функция | Реализация |
+|---|---|
+| Запуск сразу на `m.youtube.com` в одном окне без адресной строки и вкладок | `VidframeLauncherActivity` открывает сайт как standalone web-app (PWA-оболочка Fenix) |
+| Только разрешённые домены | `NavigationAllowlist` + `VidframeRequestInterceptor` (хук в `AppRequestInterceptor`) |
+| Режим `strict` / `warn` | Gradle-свойство `-Pvidframe.navMode=strict\|warn` |
+| uBlock Origin предустановлен, обновляется с AMO | `UboProvisioner` ставит подписанный XPI из assets, автоподтверждает разрешения |
+| DoH на AdGuard, TRR-only, failover | `vidframe-prefs.js` (с первого запроса) + `DohFailover` (рантайм) |
+| Телеметрия, Pocket, спонсорский контент выключены | Значения по умолчанию в `Settings.kt`, `vidframe-prefs.js` |
+| Настройки, uBO, история | Ярлыки долгого нажатия на иконку (`shortcuts.xml`) |
+
+## Где что лежит
+
+Проект — это форк монорепозитория Firefox. Все изменения либо в этом
+каталоге (`vidframe/`), либо в небольшом наборе файлов Fenix/GeckoView,
+перечисленных в [docs/E-repo-tree.md](docs/E-repo-tree.md).
+
+## Документация
+
+* [A. Сравнение путей и выбор версии](docs/A-paths-and-version.md)
+* [B. Пошаговый план сборки](docs/B-build-plan.md)
+* [C. policies.json и его Android-эквивалент](docs/C-policies.md)
+* [D. userChrome.css / userContent.css на Android](docs/D-ui-css.md)
+* [E. Структура репозитория](docs/E-repo-tree.md)
+* [F. Подводные камни](docs/F-pitfalls.md)
+* [G. Чек-лист перед релизом](docs/G-release-checklist.md)
+* [Распространение, подпись, лицензии](docs/distribution-and-legal.md)
+
+## Быстрая сборка (arm64-v8a)
+
+```bash
+./mach --no-interactive bootstrap --application-choice "GeckoView/Firefox for Android"
+```
+
+```bash
+vidframe/scripts/fetch-ubo.sh
+```
+
+```bash
+MOZCONFIG=vidframe/mozconfigs/arm64 vidframe/scripts/build.sh
+```
+
+```bash
+vidframe/scripts/sign.sh vidframe/out/vidframe-arm64-v8a-release-unsigned.apk
+```
+
+## Лицензии
+
+* Код Firefox/Fenix/GeckoView и изменения Vidframe в этих файлах — MPL-2.0.
+* uBlock Origin — GPL-3.0, распространяется в неизменном виде (подписанный
+  AMO XPI); исходный код: <https://github.com/gorhill/uBlock>. Версия и хеш —
+  в `vidframe/config/ubo.lock`.

@@ -433,3 +433,8 @@ CLAUDE.local.md
 # Ignore .json.gz (typically profiles) in the root directory
 # lint-ignore-next-line: git-only
 /*.json.gz
+
+# Vidframe: fetched at build time by vidframe/scripts/fetch-ubo.sh, never committed.
+mobile/android/fenix/app/src/main/assets/extensions/ublock_origin.xpi
+vidframe/out/
+vidframe/keystore/

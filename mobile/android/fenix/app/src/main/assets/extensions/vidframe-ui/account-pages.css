@@ -1,0 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Sign-in and consent pages: hide "Use another browser"/"Get the app" upsell links that lead off the allowlist. */
+a[href*="play.google.com/store"],
+a[href^="intent://"] {
+  display: none !important;
+}

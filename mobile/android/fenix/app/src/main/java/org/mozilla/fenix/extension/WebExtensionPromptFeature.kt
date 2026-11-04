@@ -59,6 +59,7 @@ import org.mozilla.fenix.addons.DownloadAddonDialogFragmentArgs
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.ThemeManager
+import org.mozilla.fenix.vidframe.UboProvisioner
 
 /** Feature implementation for handling [WebExtensionPromptRequest] and showing the respective UI. */
 class WebExtensionPromptFeature(
@@ -142,6 +143,10 @@ class WebExtensionPromptFeature(
 
     @VisibleForTesting
     internal fun handleAfterInstallationRequest(promptRequest: WebExtensionPromptRequest.AfterInstallation) {
+        if (UboProvisioner.autoAccept(promptRequest)) {
+            consumePromptRequest()
+            return
+        }
         val installedState = addonManager.toInstalledState(promptRequest.extension)
         val addon = Addon.newFromWebExtension(promptRequest.extension, installedState)
         when (promptRequest) {

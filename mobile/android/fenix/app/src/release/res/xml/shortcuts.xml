@@ -3,35 +3,40 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<!-- Vidframe: the web-app shell has no menu, so settings, the add-on manager (uBlock Origin) and local history are
+     reachable through launcher long-press shortcuts that use the release deep-link scheme. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
-        android:shortcutId="password_manager"
+        android:shortcutId="vidframe_settings"
         android:enabled="true"
-        android:icon="@drawable/ic_static_password_shortcut"
-        android:shortcutShortLabel="@string/home_screen_shortcut_passwords">
+        android:icon="@drawable/mozac_ic_settings_24"
+        android:shortcutShortLabel="@string/vidframe_shortcut_settings">
         <intent
-            android:action="org.mozilla.fenix.OPEN_PASSWORD_MANAGER"
-            android:targetPackage="org.mozilla.firefox"
-            android:targetClass="org.mozilla.fenix.IntentReceiverActivity" />
+            android:action="android.intent.action.VIEW"
+            android:data="vidframe://settings"
+            android:targetPackage="io.github.vidframe.app"
+            android:targetClass="org.mozilla.fenix.HomeActivity" />
     </shortcut>
     <shortcut
-        android:shortcutId="open_new_tab"
+        android:shortcutId="vidframe_addons"
         android:enabled="true"
-        android:icon="@drawable/ic_static_shortcut_tab"
-        android:shortcutShortLabel="@string/home_screen_shortcut_open_new_tab_2">
+        android:icon="@drawable/mozac_ic_extension_24"
+        android:shortcutShortLabel="@string/vidframe_shortcut_addons">
         <intent
-            android:action="org.mozilla.fenix.OPEN_TAB"
-            android:targetPackage="org.mozilla.firefox"
-            android:targetClass="org.mozilla.fenix.IntentReceiverActivity" />
+            android:action="android.intent.action.VIEW"
+            android:data="vidframe://settings_addon_manager"
+            android:targetPackage="io.github.vidframe.app"
+            android:targetClass="org.mozilla.fenix.HomeActivity" />
     </shortcut>
     <shortcut
-        android:shortcutId="open_new_private_tab"
+        android:shortcutId="vidframe_history"
         android:enabled="true"
-        android:icon="@drawable/ic_static_shortcut_private_tab"
-        android:shortcutShortLabel="@string/home_screen_shortcut_open_new_private_tab_2">
+        android:icon="@drawable/mozac_ic_history_24"
+        android:shortcutShortLabel="@string/vidframe_shortcut_history">
         <intent
-            android:action="org.mozilla.fenix.OPEN_PRIVATE_TAB"
-            android:targetPackage="org.mozilla.firefox"
-            android:targetClass="org.mozilla.fenix.IntentReceiverActivity" />
+            android:action="android.intent.action.VIEW"
+            android:data="vidframe://urls_history"
+            android:targetPackage="io.github.vidframe.app"
+            android:targetClass="org.mozilla.fenix.HomeActivity" />
     </shortcut>
 </shortcuts>

@@ -1,0 +1,4 @@
+# Upstream base for the Vidframe patch series. Update on every rebase (see docs/B-build-plan.md, step 12).
+UPSTREAM_BRANCH=release
+UPSTREAM_TAG=
+UPSTREAM_VERSION=159

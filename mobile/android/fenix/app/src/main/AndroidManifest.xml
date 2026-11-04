@@ -98,7 +98,7 @@
         <activity-alias
             android:name="${applicationId}.App"
             android:exported="true"
-            android:targetActivity="HomeActivity">
+            android:targetActivity=".vidframe.VidframeLauncherActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -568,21 +568,30 @@
             android:windowSoftInputMode="adjustResize|stateAlwaysHidden" />
 
         <activity
+            android:name=".vidframe.VidframeLauncherActivity"
+            android:theme="@style/Theme.Transparent"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="youtube.com" />
+                <data android:host="www.youtube.com" />
+                <data android:host="m.youtube.com" />
+                <data android:host="youtu.be" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".IntentReceiverActivity"
             android:theme="@style/Theme.Transparent"
             android:relinquishTaskIdentity="true"
             android:taskAffinity=""
             android:exported="true"
             android:excludeFromRecents="true" >
-
-            <!--
-              Respond to `Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER)`
-            -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.APP_BROWSER"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
 
             <!--
               Verified App Links for Firefox Accounts pairing. The /pair QR code encodes an https URL
@@ -601,16 +610,6 @@
                 <data android:pathPrefix="/pair" />
             </intent-filter>
 
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <category android:name="mozilla.components.pwa.category.SHORTCUT" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-            </intent-filter>
-
             <!--Exposed specific deep links for third-party apps to open wallpaper settings.-->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -620,24 +619,6 @@
                     android:host="settings_wallpapers"/>
             </intent-filter>
 
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.BROWSABLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-                <data android:mimeType="text/html" />
-                <data android:mimeType="text/plain" />
-                <data android:mimeType="application/xhtml+xml" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
@@ -647,25 +628,8 @@
                 android:resource="@xml/searchable"/>
 
             <intent-filter>
-                <action android:name="android.intent.action.WEB_SEARCH" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-
-            <intent-filter>
                 <action android:name="mozilla.components.feature.pwa.VIEW_PWA" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="https" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.ASSIST" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="http" />
                 <data android:scheme="https" />
             </intent-filter>
 

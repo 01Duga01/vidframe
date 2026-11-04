@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="vidframe_about_disclaimer" translatable="false" tools:ignore="BrandUsage">%1$s is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Google LLC, YouTube or Mozilla. YouTube is a trademark of Google LLC; Firefox is a trademark of the Mozilla Foundation. %1$s is built from Mozilla Firefox for Android source code (MPL-2.0) and ships uBlock Origin (GPL-3.0) as a general-purpose content blocker.\n\n%1$s — независимый проект с открытым исходным кодом, не связанный с Google LLC, YouTube или Mozilla.</string>
+    <string name="vidframe_shortcut_settings" translatable="false">Настройки</string>
+    <string name="vidframe_shortcut_addons" translatable="false">Блокировщик</string>
+    <string name="vidframe_shortcut_history" translatable="false">История</string>
+</resources>

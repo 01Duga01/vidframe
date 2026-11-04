@@ -1,0 +1,32 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/*
+ * Applied to https://m.youtube.com/* only. This is the Android replacement for userContent.css:
+ * content scripts of a built-in extension ship inside the APK and need no profile access.
+ * Ad blocking is NOT done here; that is uBlock Origin's job. These rules only remove
+ * "install the native app" and upsell surfaces that make no sense inside this client.
+ * Selectors are YouTube's custom element names and change without notice; re-check every release
+ * (see vidframe/docs/06-release-checklist.md).
+ */
+
+/* Bottom sheet "Open in the YouTube app" / promo mealbar. */
+ytm-mealbar-promo-renderer,
+.mealbar-promo-renderer {
+  display: none !important;
+}
+
+/* Premium / app statement banners at the top of the feed. */
+ytm-statement-banner-renderer {
+  display: none !important;
+}
+
+/* "Open App" pill in the watch page header and in the top bar menu. */
+ytm-open-app-button,
+.open-app-button,
+a[href^="intent://"],
+a[href^="vnd.youtube:"] {
+  display: none !important;
+}
+

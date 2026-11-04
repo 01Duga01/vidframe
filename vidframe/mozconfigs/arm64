@@ -1,0 +1,18 @@
+# Vidframe: Firefox for Android (Fenix) + GeckoView, arm64-v8a, unofficial branding.
+ac_add_options --enable-project=mobile/android
+ac_add_options --target=aarch64-linux-android
+
+ac_add_options --enable-release
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
+ac_add_options --disable-tests
+
+# Never build with official branding or MOZILLA_OFFICIAL: Firefox trademarks.
+# The default (unofficial) branding is used when --with-branding is not set.
+
+# Crash reports would go to Mozilla's Socorro; not acceptable for a third-party build.
+ac_add_options --disable-crashreporter
+
+ac_add_options --enable-update-channel=release
+
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-vidframe-arm64

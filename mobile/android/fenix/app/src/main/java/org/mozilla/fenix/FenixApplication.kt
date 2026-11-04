@@ -144,6 +144,7 @@ import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.theme.DefaultThemeProvider
 import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.vidframe.VidframeIntegration
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.widget.SearchWidgets
@@ -380,6 +381,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         components.strictMode.enableStrictMode(true)
 
         initializeWebExtensionSupport()
+        VidframeIntegration.start(this, components)
 
         // Make sure to call this function before registering a storage worker
         // (e.g. components.core.historyStorage.registerStorageMaintenanceWorker())

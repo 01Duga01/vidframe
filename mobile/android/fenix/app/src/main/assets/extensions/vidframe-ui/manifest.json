@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "name": "Vidframe UI",
+  "version": "1.0.0",
+  "description": "Built-in page styles for the Vidframe client (userContent.css replacement).",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ui@vidframe"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://m.youtube.com/*"],
+      "css": ["m-youtube.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://accounts.google.com/*", "https://consent.youtube.com/*", "https://consent.google.com/*"],
+      "css": ["account-pages.css"],
+      "run_at": "document_start"
+    }
+  ]
+}
