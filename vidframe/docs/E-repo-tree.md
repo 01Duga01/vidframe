@@ -62,6 +62,10 @@
             │   │       ├── DohFailover.kt             TRR-only + переключение endpoint по health-check
             │   │       ├── UboProvisioner.kt          первая установка uBO, автоподтверждение разрешений
             │   │       ├── VidframeLauncherActivity.kt запуск m.youtube.com как standalone web-app, ожидание uBO
+            │   │       ├── dpi/                       обход DPI внутри приложения (без root и VPN)
+            │   │       │   ├── TlsDesync.kt           разбор ClientHello, разрез SNI на записи и сегменты
+            │   │       │   ├── DpiBypassProxy.kt      локальный SOCKS5-прокси на 127.0.0.1
+            │   │       │   └── DpiBypass.kt           автовключение для RU, настройка Gecko
             │   │       ├── VidframePictureInPicture.kt «Домой» при воспроизведении → PiP
             │   │       ├── VideoCodecTuning.kt        AV1 только при аппаратном декодере
             │   │       ├── VidframeHomeGuard.kt       домашний экран/тулбар/вкладки Fenix → стартовая страница

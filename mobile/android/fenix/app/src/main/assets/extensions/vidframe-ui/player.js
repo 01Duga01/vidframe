@@ -95,42 +95,34 @@
     event.stopImmediatePropagation();
   }
 
-  window.addEventListener(
-    "touchstart",
-    event => {
-      const target = fullscreenVideo();
-      if (!target || event.touches.length !== 2) {
-        return;
-      }
-      zoom.root = target.root;
-      zoom.gesture = {
-        distance: distance(event.touches[0], event.touches[1]),
-        midpoint: midpoint(event.touches[0], event.touches[1]),
-        scale: zoom.scale,
-        tx: zoom.tx,
-        ty: zoom.ty,
-      };
-      swallow(event);
-    },
-    { capture: true, passive: false }
-  );
+  function onTouchStart(event) {
+    const target = fullscreenVideo();
+    if (!target || event.touches.length !== 2) {
+      return;
+    }
+    zoom.root = target.root;
+    zoom.gesture = {
+      distance: distance(event.touches[0], event.touches[1]),
+      midpoint: midpoint(event.touches[0], event.touches[1]),
+      scale: zoom.scale,
+      tx: zoom.tx,
+      ty: zoom.ty,
+    };
+    swallow(event);
+  }
 
-  window.addEventListener(
-    "touchmove",
-    event => {
-      const g = zoom.gesture;
-      if (!g || event.touches.length !== 2) {
-        return;
-      }
-      const m = midpoint(event.touches[0], event.touches[1]);
-      zoom.scale = clamp((g.scale * distance(event.touches[0], event.touches[1])) / g.distance, 1, ZOOM_MAX);
-      zoom.tx = g.tx + (m.x - g.midpoint.x);
-      zoom.ty = g.ty + (m.y - g.midpoint.y);
-      applyZoom();
-      swallow(event);
-    },
-    { capture: true, passive: false }
-  );
+  function onTouchMove(event) {
+    const g = zoom.gesture;
+    if (!g || event.touches.length !== 2) {
+      return;
+    }
+    const m = midpoint(event.touches[0], event.touches[1]);
+    zoom.scale = clamp((g.scale * distance(event.touches[0], event.touches[1])) / g.distance, 1, ZOOM_MAX);
+    zoom.tx = g.tx + (m.x - g.midpoint.x);
+    zoom.ty = g.ty + (m.y - g.midpoint.y);
+    applyZoom();
+    swallow(event);
+  }
 
   function endGesture(event) {
     if (!zoom.gesture || event.touches.length >= 2) {
@@ -155,15 +147,40 @@
     applyZoom();
     swallow(event);
   }
-  window.addEventListener("touchend", endGesture, { capture: true, passive: false });
-  window.addEventListener("touchcancel", endGesture, { capture: true, passive: false });
+
+  /*
+   * Non-passive touch listeners make the engine wait for script on every touch before it may scroll, which shows as
+   * jank in the Shorts feed and in normal scrolling. They are therefore only attached while a video is fullscreen.
+   */
+  const TOUCH_OPTIONS = { capture: true, passive: false };
+  let touchListenersAttached = false;
+  function setTouchListeners(attach) {
+    if (attach === touchListenersAttached) {
+      return;
+    }
+    touchListenersAttached = attach;
+    const method = attach ? "addEventListener" : "removeEventListener";
+    window[method]("touchstart", onTouchStart, TOUCH_OPTIONS);
+    window[method]("touchmove", onTouchMove, TOUCH_OPTIONS);
+    window[method]("touchend", endGesture, TOUCH_OPTIONS);
+    window[method]("touchcancel", endGesture, TOUCH_OPTIONS);
+  }
 
   document.addEventListener("fullscreenchange", () => {
+    setTouchListeners(!!document.fullscreenElement);
     if (!document.fullscreenElement) {
       resetZoom();
     }
   });
-  document.addEventListener("loadedmetadata", resetZoom, true);
+  document.addEventListener(
+    "loadedmetadata",
+    () => {
+      if (zoom.root) {
+        resetZoom();
+      }
+    },
+    true
+  );
 
   // ---------------------------------------------------------------- miniplayer
 

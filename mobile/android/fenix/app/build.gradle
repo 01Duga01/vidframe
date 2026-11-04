@@ -80,6 +80,8 @@ android {
         buildConfigField "String", "VIDFRAME_NAV_MODE", "\"${project.findProperty("vidframe.navMode") ?: "strict"}\""
         // Vidframe page scale: web content is rendered at this fraction of the system density (0.5-1.0).
         buildConfigField "float", "VIDFRAME_CONTENT_SCALE", "${project.findProperty("vidframe.contentScale") ?: "0.7"}f"
+        // Vidframe in-app DPI bypass: "auto" (on for Russian networks/SIM/region), "on" or "off".
+        buildConfigField "String", "VIDFRAME_DPI_BYPASS", "\"${project.findProperty("vidframe.dpiBypass") ?: "auto"}\""
     }
 
     def releaseTemplate = {
