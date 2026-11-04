@@ -14,6 +14,9 @@ object VidframeConfig {
     const val SCOPE = "https://m.youtube.com/"
     const val APP_TITLE = "Vidframe"
 
+    /** Origins connected to (DNS, TCP, TLS) while the app is still starting, before the first page request. */
+    val PRECONNECT_URLS = listOf(START_URL, "https://i.ytimg.com/", "https://yt3.ggpht.com/")
+
     const val UBO_ID = "uBlock0@raymondhill.net"
     const val UBO_ASSET = "extensions/ublock_origin.xpi"
 

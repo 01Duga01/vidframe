@@ -26,7 +26,6 @@ pref("network.connectivity-service.enabled", false);
 pref("network.dns.disablePrefetch", true);
 pref("network.dns.disablePrefetchFromHTTPS", true);
 pref("network.prefetch-next", false);
-pref("network.http.speculative-parallel-limit", 0);
 
 // HTTPS-only everywhere (Fenix setting is defaulted on as well).
 pref("dom.security.https_only_mode", true);

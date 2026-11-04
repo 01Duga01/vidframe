@@ -20,6 +20,7 @@ object VidframeIntegration {
         get() = provisioner?.ready ?: MutableStateFlow(true)
 
     fun start(context: Context, components: Components) {
+        VidframeConfig.PRECONNECT_URLS.forEach { components.core.engine.speculativeConnect(it) }
         VideoCodecTuning.apply(context, components.core.engine)
         DohFailover(context, components.core.engine, components.settings).start()
         provisioner =

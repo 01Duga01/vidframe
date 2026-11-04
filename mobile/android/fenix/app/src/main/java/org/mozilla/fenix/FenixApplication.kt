@@ -869,8 +869,9 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
                     settings.shouldFollowDeviceTheme = true
                 } else {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                    settings.shouldUseLightTheme = true
+                    // Vidframe: Android 8.x has no system dark mode; follow Battery Saver instead of forcing light.
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY)
+                    settings.shouldUseAutoBatteryTheme = true
                 }
             }
         }
