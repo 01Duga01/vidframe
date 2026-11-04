@@ -47,7 +47,7 @@ android {
             arg("room.schemaLocation", "$projectDir/schemas".toString())
         }
 
-        applicationId "org.mozilla"
+        applicationId "io.github.vidframe"
         minSdk config.minSdkVersion
         targetSdk config.targetSdkVersion
         versionCode 1
@@ -76,6 +76,8 @@ android {
 
         buildConfigField "String[]", "SUPPORTED_LOCALE_ARRAY", getSupportedLocales()
         buildConfigField "boolean", "IS_BENCHMARK_BUILD", "false"
+        // Vidframe navigation mode: "strict" (block page only) or "warn" (block page + hand-off to another browser).
+        buildConfigField "String", "VIDFRAME_NAV_MODE", "\"${project.findProperty("vidframe.navMode") ?: "strict"}\""
     }
 
     def releaseTemplate = {
@@ -142,8 +144,8 @@ android {
         }
         release releaseTemplate >> {
             buildConfigField "boolean", "USE_RELEASE_VERSIONING", "true"
-            applicationIdSuffix ".firefox"
-            def deepLinkSchemeValue = "fenix"
+            applicationIdSuffix ".app"
+            def deepLinkSchemeValue = "vidframe"
             buildConfigField "String", "DEEP_LINK_SCHEME", "\"$deepLinkSchemeValue\""
             manifestPlaceholders.putAll([
                     // This release type is meant to replace Firefox (Release channel) and therefore needs to inherit
@@ -153,7 +155,7 @@ android {
                     // fatal consequences. For example see:
                     //  - https://issuetracker.google.com/issues/36924841
                     //  - https://issuetracker.google.com/issues/36905922
-                    "sharedUserId": "org.mozilla.firefox.sharedID",
+                    "sharedUserId": "io.github.vidframe.sharedID",
                     "deepLinkScheme": deepLinkSchemeValue,
             ])
         }
@@ -281,6 +283,19 @@ android {
     }
 
     namespace = 'org.mozilla.fenix'
+}
+
+// -------------------------------------------------------------------------------------------------
+// Vidframe: release builds must ship uBlock Origin (fetched by vidframe/scripts/fetch-ubo.sh).
+// -------------------------------------------------------------------------------------------------
+
+def vidframeUboXpi = file("src/main/assets/extensions/ublock_origin.xpi")
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (!vidframeUboXpi.isFile() || vidframeUboXpi.length() == 0L) {
+            throw new GradleException("Missing ${vidframeUboXpi}: run vidframe/scripts/fetch-ubo.sh before assembleRelease")
+        }
+    }
 }
 
 // -------------------------------------------------------------------------------------------------

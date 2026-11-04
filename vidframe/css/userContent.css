@@ -1,0 +1,44 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/*
+ * Reference userContent.css. On Android it only works on a rooted device or a debuggable build:
+ *   1. pref toolkit.legacyUserProfileCustomizations.stylesheets = true (default false, modules/libpref/init/all.js)
+ *   2. file at /data/data/<applicationId>/files/mozilla/<profile>.default/chrome/userContent.css
+ * The shipping build does NOT use this file. The same rules are delivered by the built-in extension
+ * mobile/android/fenix/app/src/main/assets/extensions/vidframe-ui/ (content_scripts css), which needs
+ * neither root nor profile access and is updated with the APK. Keep both in sync.
+ *
+ * These rules only hide "install the native app"/upsell surfaces; ad blocking is uBlock Origin's job.
+ * m.youtube.com element names change without notice: re-check each release (docs/G-release-checklist.md).
+ */
+
+@-moz-document domain("m.youtube.com") {
+  /* "Open in the app" bottom sheet / promo mealbar. */
+  ytm-mealbar-promo-renderer,
+  .mealbar-promo-renderer {
+    display: none !important;
+  }
+
+  /* Statement / upsell banners at the top of the feed. */
+  ytm-statement-banner-renderer {
+    display: none !important;
+  }
+
+  /* "Open App" buttons and links that would leave the client. */
+  ytm-open-app-button,
+  .open-app-button,
+  a[href^="intent://"],
+  a[href^="vnd.youtube:"] {
+    display: none !important;
+  }
+}
+
+@-moz-document domain("accounts.google.com"), domain("consent.youtube.com"), domain("consent.google.com") {
+  /* "Get the app" links on sign-in and consent pages lead off the allowlist. */
+  a[href*="play.google.com/store"],
+  a[href^="intent://"] {
+    display: none !important;
+  }
+}

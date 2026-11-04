@@ -13,6 +13,7 @@ import io.mockk.verify
 import java.io.File
 import java.util.Calendar
 import kotlin.test.assertNull
+import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.DISABLED
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.ENABLED
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.ENABLED_PRIVATE_ONLY
@@ -39,6 +40,7 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
+import org.mozilla.fenix.vidframe.VidframeConfig
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -184,10 +186,31 @@ class SettingsTest {
     }
 
     @Test
-    fun isTelemetryEnabled() {
-        // When just created
-        // Then
-        assertTrue(settings.isTelemetryEnabled)
+    fun `GIVEN a new install THEN telemetry, usage ping and experiments are disabled`() {
+        assertFalse(settings.isTelemetryEnabled)
+        assertFalse(settings.isDailyUsagePingEnabled)
+        assertFalse(settings.isExperimentationEnabled)
+    }
+
+    @Test
+    fun `GIVEN a new install THEN DoH is TRR-only on AdGuard DNS and its settings entry is hidden`() {
+        assertEquals(Engine.DohSettingsMode.MAX, settings.getDohSettingsMode())
+        assertEquals(VidframeConfig.DOH_ENDPOINTS.first(), settings.dohProviderUrl)
+        assertEquals(VidframeConfig.DOH_ENDPOINTS.first(), settings.dohDefaultProviderUrl)
+        assertEquals("https://dns.adguard-dns.com/dns-query", settings.dohProviderUrl)
+        assertFalse(settings.showDohEntryPoint)
+    }
+
+    @Test
+    fun `GIVEN a new install THEN the browser onboarding is never shown`() {
+        assertFalse(settings.onboardingFeatureEnabled)
+        assertFalse(settings.shouldShowOnboarding(hasUserBeenOnboarded = false))
+    }
+
+    @Test
+    fun `GIVEN a new install THEN sponsored content and the terms of use prompt are disabled`() {
+        assertFalse(settings.showContileFeature)
+        assertFalse(settings.isTermsOfUsePromptEnabled)
     }
 
     @Test
@@ -969,8 +992,9 @@ class SettingsTest {
     }
 
     @Test
-    fun `GIVEN unset user preferences THEN https-only is disabled`() {
-        assertFalse(settings.shouldUseHttpsOnly)
+    fun `GIVEN unset user preferences THEN https-only is enabled`() {
+        assertTrue(settings.shouldUseHttpsOnly)
+        assertEquals(ENABLED, settings.getHttpsOnlyMode())
     }
 
     @Test

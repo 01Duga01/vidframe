@@ -387,3 +387,6 @@ pref("xpinstall.whitelist.fileRequest", false);
 pref("browser.ipProtection.enabled", true);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("toolkit.ipProtection.android.authProvider", "fxa");
+
+// Vidframe single-site client defaults.
+#include vidframe-prefs.js

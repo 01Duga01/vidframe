@@ -50,6 +50,7 @@ import org.mozilla.fenix.addons.AddonsManagementFragmentDirections
 import org.mozilla.fenix.addons.DownloadAddonDialogFragment
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.LinkTextView
+import org.mozilla.fenix.vidframe.VidframeConfig
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -713,6 +714,64 @@ class WebExtensionPromptFeatureTest {
                 mockk<WebExtensionPromptRequest.AfterInstallation.Permissions.Optional>(relaxed = true) {
                     every { extension } returns
                         mockk(relaxed = true) {
+                            every { getMetadata() } returns
+                                mockk(relaxed = true) {
+                                    every { updateDate } returns "2023-10-27T10:15:30.500Z"
+                                }
+                        }
+                }
+
+            webExtensionPromptFeature.handleAfterInstallationRequest(request)
+
+            verify { webExtensionPromptFeature.handleOptionalPermissionsRequest(any(), any()) }
+        }
+
+    @Test
+    fun `GIVEN uBlock Origin required permissions WHEN handleAfterInstallationRequest is called THEN Fenix shows no dialog and leaves the prompt to the provisioner`() =
+        runTest(testDispatcher) {
+            webExtensionPromptFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val request =
+                mockk<WebExtensionPromptRequest.AfterInstallation.Permissions.Required>(relaxed = true) {
+                    every { extension } returns mockk(relaxed = true) { every { id } returns VidframeConfig.UBO_ID }
+                }
+
+            webExtensionPromptFeature.handleAfterInstallationRequest(request)
+
+            verify(exactly = 0) {
+                webExtensionPromptFeature.showPermissionDialog(any(), any(), any(), any(), any(), any())
+            }
+            verify(exactly = 0) { webExtensionPromptFeature.consumePromptRequest() }
+        }
+
+    @Test
+    fun `GIVEN uBlock Origin post-installation WHEN handleAfterInstallationRequest is called THEN no dialog is shown`() =
+        runTest(testDispatcher) {
+            webExtensionPromptFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val request =
+                mockk<WebExtensionPromptRequest.AfterInstallation.PostInstallation>(relaxed = true) {
+                    every { extension } returns mockk(relaxed = true) { every { id } returns VidframeConfig.UBO_ID }
+                }
+
+            webExtensionPromptFeature.handleAfterInstallationRequest(request)
+
+            verify(exactly = 0) { webExtensionPromptFeature.showPostInstallationDialog(any()) }
+        }
+
+    @Test
+    fun `GIVEN uBlock Origin optional permissions WHEN handleAfterInstallationRequest is called THEN the regular Fenix flow handles them`() =
+        runTest(testDispatcher) {
+            webExtensionPromptFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val request =
+                mockk<WebExtensionPromptRequest.AfterInstallation.Permissions.Optional>(relaxed = true) {
+                    every { extension } returns
+                        mockk(relaxed = true) {
+                            every { id } returns VidframeConfig.UBO_ID
                             every { getMetadata() } returns
                                 mockk(relaxed = true) {
                                     every { updateDate } returns "2023-10-27T10:15:30.500Z"

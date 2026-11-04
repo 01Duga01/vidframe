@@ -23,6 +23,7 @@ import org.mozilla.fenix.AppRequestInterceptor.Companion.ERROR_PAGE_ACTION_SCHEM
 import org.mozilla.fenix.GleanMetrics.ErrorPage
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isOnline
+import org.mozilla.fenix.vidframe.VidframeRequestInterceptor
 
 class AppRequestInterceptor(
     private val context: Context,
@@ -32,6 +33,8 @@ class AppRequestInterceptor(
     private var navController: WeakReference<NavController>? = null
 
     private val interceptAboutHomeAllowList = listOf(R.id.browserFragment)
+
+    private val vidframeInterceptor by lazy { VidframeRequestInterceptor(context) }
 
     fun setNavigationController(navController: NavController) {
         this.navController = WeakReference(navController)
@@ -58,9 +61,13 @@ class AppRequestInterceptor(
             return null
         }
 
+        vidframeInterceptor.onLoadRequest(uri, hasUserGesture, isSubframeRequest)?.let {
+            return it
+        }
+
+        // Vidframe: app links are not consulted so that allowed URLs never leave this client.
         val services = context.components.services
         return listOf(
-                services.appLinksInterceptor,
                 services.storyUTMRequestInterceptor,
             )
             .firstNotNullOfOrNull {

@@ -1,0 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/*
+ * userChrome.css for Vidframe on Android: INTENTIONALLY EMPTY.
+ *
+ * Firefox for Android (Fenix) draws its UI with native Android views and Jetpack Compose,
+ * not with XUL/HTML chrome documents. GeckoView renders web content only, so there is no
+ * chrome document this stylesheet could ever apply to. No selector here has any effect,
+ * on any Fenix version.
+ *
+ * What replaces it (see vidframe/docs/D-ui-css.md):
+ *   - address bar, tabs, home screen, menus  -> not shown: the app runs as a standalone web app
+ *                                               (VidframeLauncherActivity + ExternalAppBrowserActivity)
+ *   - onboarding, Terms of Use, Pocket        -> FeatureFlags.kt / Settings.kt defaults
+ *   - settings / uBO / history entry points   -> res/xml/shortcuts.xml (launcher long-press)
+ *   - colours, icon, name                     -> res/ (release source set)
+ */

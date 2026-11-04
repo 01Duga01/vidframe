@@ -25,5 +25,6 @@ object FeatureFlags {
      *
      * ⚠️ DO NOT MODIFY THIS FLAG IN PRODUCTION.
      */
-    val onboardingFeatureEnabled = !Config.channel.isDebug
+    // Vidframe: the client never shows the browser onboarding flow.
+    val onboardingFeatureEnabled = false
 }

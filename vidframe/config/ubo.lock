@@ -1,0 +1,5 @@
+# Pinned uBlock Origin release from addons.mozilla.org (AMO-signed XPI).
+# Regenerate with: vidframe/scripts/fetch-ubo.sh --update
+UBO_VERSION=
+UBO_URL=
+UBO_SHA256=

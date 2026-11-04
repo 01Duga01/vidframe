@@ -71,14 +71,14 @@ class DefaultPrivacyPreferencesRepositoryTest {
         runTest {
             val settings = Settings(testContext)
             val repository = DefaultPrivacyPreferencesRepository(settings, FakeNimbusApi(), createCrashReporter())
-            assertTrue(settings.isTelemetryEnabled)
-            assertTrue(repository.getPreference(PreferenceType.UsageData))
-
-            settings.isTelemetryEnabled = false
+            assertFalse(settings.isTelemetryEnabled)
             assertFalse(repository.getPreference(PreferenceType.UsageData))
 
             settings.isTelemetryEnabled = true
             assertTrue(repository.getPreference(PreferenceType.UsageData))
+
+            settings.isTelemetryEnabled = false
+            assertFalse(repository.getPreference(PreferenceType.UsageData))
         }
     }
 
@@ -93,19 +93,10 @@ class DefaultPrivacyPreferencesRepositoryTest {
                 nimbusSdk = nimbusSdk,
                 crashReporter = createCrashReporter(listOf(crashTelemetryService)),
             )
-        assertTrue(settings.isTelemetryEnabled)
-        assertTrue(settings.isExperimentationEnabled)
-        assertTrue(crashTelemetryService.isTelemetryOn)
-        assertTrue(nimbusSdk.experimentParticipation)
-
-        nimbusSdk.isTelemetryIdReset = false
-        repository.setPreference(PreferenceType.UsageData, false)
-
+        // Vidframe ships with telemetry and experiments off.
         assertFalse(settings.isTelemetryEnabled)
         assertFalse(settings.isExperimentationEnabled)
         assertFalse(crashTelemetryService.isTelemetryOn)
-        assertFalse(nimbusSdk.experimentParticipation)
-        assertTrue(nimbusSdk.isTelemetryIdReset)
 
         nimbusSdk.isTelemetryIdReset = false
         repository.setPreference(PreferenceType.UsageData, true)
@@ -114,6 +105,15 @@ class DefaultPrivacyPreferencesRepositoryTest {
         assertTrue(settings.isExperimentationEnabled)
         assertTrue(crashTelemetryService.isTelemetryOn)
         assertTrue(nimbusSdk.experimentParticipation)
+        assertTrue(nimbusSdk.isTelemetryIdReset)
+
+        nimbusSdk.isTelemetryIdReset = false
+        repository.setPreference(PreferenceType.UsageData, false)
+
+        assertFalse(settings.isTelemetryEnabled)
+        assertFalse(settings.isExperimentationEnabled)
+        assertFalse(crashTelemetryService.isTelemetryOn)
+        assertFalse(nimbusSdk.experimentParticipation)
         assertTrue(nimbusSdk.isTelemetryIdReset)
     }
 }

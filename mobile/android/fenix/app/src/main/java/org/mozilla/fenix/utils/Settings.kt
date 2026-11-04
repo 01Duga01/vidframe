@@ -76,6 +76,7 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.termsofuse.TOU_VERSION
+import org.mozilla.fenix.vidframe.VidframeConfig
 import org.mozilla.fenix.wallpapers.Wallpaper
 
 private const val AUTOPLAY_USER_SETTING = "AUTOPLAY_USER_SETTING"
@@ -168,9 +169,6 @@ class Settings(
 
         /** DoH is disabled, corresponds to TRR_MODE_DISABLED (5) from GeckoView */
         private const val DOH_SETTINGS_OFF = 5
-
-        /** Bug 1946867 - Currently "hardcoded" to the DoH TRR URI of Cloudflare */
-        private const val CLOUDFLARE_URI = "https://mozilla.cloudflare-dns.com/dns-query"
     }
 
     private val logger = Logger("Settings")
@@ -200,7 +198,7 @@ class Settings(
         lazyFeatureFlagBooleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_pocket_homescreen_recommendations),
             featureFlag = ContentRecommendationsFeatureHelper.isContentRecommendationsFeatureEnabled(appContext),
-            defaultValue = { homescreenSections[HomeScreenSection.POCKET] == true },
+            defaultValue = { false },
         )
 
     /** Indicates what simple toolbar shortcut key is currently selected. */
@@ -242,7 +240,7 @@ class Settings(
     val showPocketSponsoredStories by
         lazyFeatureFlagBooleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories),
-            defaultValue = { homescreenSections[HomeScreenSection.POCKET_SPONSORED_STORIES] == true },
+            defaultValue = { false },
             featureFlag = ContentRecommendationsFeatureHelper.isPocketSponsoredStoriesFeatureEnabled(appContext),
         )
 
@@ -704,7 +702,7 @@ class Settings(
     var isTelemetryEnabled by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_telemetry),
-            default = true,
+            default = false,
         )
 
     var isMarketingTelemetryEnabled by
@@ -767,7 +765,7 @@ class Settings(
     var isTermsOfUsePromptEnabled by
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_terms_prompt_enabled),
-            default = { FxNimbus.features.termsOfUsePrompt.value().enabled },
+            default = false,
         )
 
     /** Returns true if the nimbus flag for showing the terms of use drag handle is true. */
@@ -1275,7 +1273,7 @@ class Settings(
     var shouldUseHttpsOnly by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_https_only),
-            default = false,
+            default = true,
         )
 
     var shouldUseHttpsOnlyInAllTabs by
@@ -2397,7 +2395,7 @@ class Settings(
     var showContileFeature by
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_contile),
-            default = true,
+            default = false,
         )
 
     /** Blocklist used to filter items from the home screen that have previously been removed. */
@@ -2779,7 +2777,7 @@ class Settings(
     var showSponsoredSuggestions by
         lazyFeatureFlagBooleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_show_sponsored_suggestions),
-            defaultValue = { enableFxSuggest },
+            defaultValue = { false },
             featureFlag = FeatureFlags.FX_SUGGEST,
         )
 
@@ -3170,7 +3168,7 @@ class Settings(
     val showDohEntryPoint by
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_doh_settings_enabled),
-            default = { FxNimbus.features.doh.value().showUi },
+            default = false,
         )
 
     /**
@@ -3183,7 +3181,7 @@ class Settings(
     private var trrMode by
         intPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_doh_settings_mode),
-            default = DOH_SETTINGS_DEFAULT,
+            default = DOH_SETTINGS_MAX,
         )
 
     /**
@@ -3193,17 +3191,16 @@ class Settings(
     var dohProviderUrl by
         stringPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_doh_provider_uri),
-            default = "",
+            default = VidframeConfig.DOH_ENDPOINTS.first(),
         )
 
     /**
-     * Stores the URI of the default DoH provider. Bug 1946867 - Currently "hardcoded" to
-     * "https://mozilla.cloudflare-dns.com/dns-query"
+     * Stores the URI of the default DoH provider. Vidframe: AdGuard DNS, see [VidframeConfig.DOH_ENDPOINTS].
      */
     val dohDefaultProviderUrl by
         stringPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_doh_default_provider_uri),
-            default = CLOUDFLARE_URI,
+            default = VidframeConfig.DOH_ENDPOINTS.first(),
         )
 
     /** Stores a set of domains that are excluded from using DNS over HTTPS. */

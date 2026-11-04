@@ -208,6 +208,7 @@ import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.utils.AccessibilityUtils.announcePrivateModeForAccessibility
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.changeAppLauncherIcon
+import org.mozilla.fenix.vidframe.VidframeHomeGuard
 
 /**
  * The main activity of the application. The application is primarily a single Activity (this one) with fragments
@@ -590,6 +591,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         setContentView(binding.root)
         ProfilerMarkers.addListenerForOnGlobalLayout(components.core.engine, this, binding.root)
+        VidframeHomeGuard.install(this, navHost.navController)
 
         privateNotificationObserver =
             PrivateNotificationFeature(

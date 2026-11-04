@@ -399,4 +399,50 @@ class AppRequestInterceptorTest {
             htmlResource = html,
         )
     }
+
+    @Test
+    fun `GIVEN a site outside the allowlist WHEN a top-level load is intercepted THEN a block page is returned`() {
+        val result = load("https://example.com/", isSubframeRequest = false)
+
+        assertIs<RequestInterceptor.InterceptionResponse.Content>(result)
+        assertTrue(result.data.contains("https://example.com/"))
+    }
+
+    @Test
+    fun `GIVEN a site outside the allowlist WHEN a subframe load is intercepted THEN it is denied`() {
+        val result = load("https://ads.example/", isSubframeRequest = true)
+
+        assertEquals(RequestInterceptor.InterceptionResponse.Deny, result)
+    }
+
+    @Test
+    fun `GIVEN an allowed video URL WHEN intercepted THEN it loads in the client and app links are not consulted`() {
+        val services = testContext.components.services
+        every {
+            services.storyUTMRequestInterceptor.onLoadRequest(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns null
+
+        assertNull(load("https://m.youtube.com/watch?v=abc", isSubframeRequest = false))
+
+        verify(exactly = 0) { services.appLinksInterceptor }
+    }
+
+    @Test
+    fun `GIVEN an app scheme from the video site WHEN intercepted THEN it is blocked instead of opening another app`() {
+        val result = load("intent://watch?v=abc#Intent;scheme=vnd.youtube;end", isSubframeRequest = false)
+
+        assertIs<RequestInterceptor.InterceptionResponse.Content>(result)
+    }
+
+    private fun load(uri: String, isSubframeRequest: Boolean) =
+        interceptor.onLoadRequest(
+            engineSession = mockk(),
+            uri = uri,
+            lastUri = "https://m.youtube.com/",
+            hasUserGesture = true,
+            isSameDomain = false,
+            isDirectNavigation = false,
+            isRedirect = false,
+            isSubframeRequest = isSubframeRequest,
+        )
 }

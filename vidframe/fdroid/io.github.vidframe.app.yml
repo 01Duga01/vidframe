@@ -1,0 +1,53 @@
+# Draft F-Droid metadata for Vidframe. Usable as-is for a self-hosted repo (binaries signed by you);
+# for the main F-Droid repo a "libre" flavour is required, see docs/distribution-and-legal.md.
+Categories:
+  - Multimedia
+License: MPL-2.0
+AuthorName: Vidframe contributors
+SourceCode: https://github.com/01duga01/vidframe
+IssueTracker: https://github.com/01duga01/vidframe/issues
+
+AutoName: Vidframe
+Summary: Single-site video client built on GeckoView
+Description: |-
+  Vidframe opens the mobile version of a popular video site in a single window, built from
+  Firefox for Android (Fenix) source code with GeckoView.
+
+  * Navigation restricted to the video site and the services it needs (sign-in, consent).
+  * DNS over HTTPS (AdGuard DNS) enabled by default, TRR-only.
+  * Includes the general-purpose content blocker uBlock Origin (GPL-3.0), enabled by default.
+  * Telemetry, sponsored content and recommendations disabled.
+
+  Vidframe is an independent project. It is not affiliated with, endorsed by or sponsored by
+  Google LLC, YouTube or Mozilla. YouTube is a trademark of Google LLC. Firefox is a trademark
+  of the Mozilla Foundation.
+
+AntiFeatures:
+  NonFreeNet:
+    en-US: Depends on a proprietary online video service.
+
+RepoType: git
+Repo: https://github.com/01duga01/vidframe.git
+
+Builds:
+  - versionName: '159.0'
+    versionCode: 0
+    commit: v159.0
+    timeout: 36000
+    subdir: mobile/android/fenix
+    sudo:
+      - apt-get update
+      - apt-get install -y make cmake clang lld python3 python3-venv unzip m4
+    init:
+      - ../../../vidframe/scripts/fetch-ubo.sh
+    output: ../../../vidframe/out/vidframe-arm64-v8a-release-unsigned.apk
+    srclibs:
+      - rustup@1.27.1
+    prebuild:
+      - echo "Remove lib-push-firebase and other non-free deps here (see IronFox/Mull prebuild)."
+    build:
+      - cd ../../.. && MOZCONFIG=vidframe/mozconfigs/arm64 vidframe/scripts/build.sh
+    ndk: r30
+
+AutoUpdateMode: None
+UpdateCheckMode: Tags ^v[0-9.]+$
