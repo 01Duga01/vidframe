@@ -22,6 +22,7 @@ import org.mozilla.fenix.Config
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.vidframe.VidframeConfig
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
 
@@ -145,6 +146,8 @@ object GeckoProvider {
         if (FxNimbus.features.fission.value().shouldUseNimbus) {
             builder.fissionEnabled(FxNimbus.features.fission.value().enabled)
         }
+
+        VidframeConfig.contentDensityOverride(context)?.let { builder.displayDensityOverride(it) }
 
         return builder.build()
     }

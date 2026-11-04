@@ -20,6 +20,7 @@ object VidframeIntegration {
         get() = provisioner?.ready ?: MutableStateFlow(true)
 
     fun start(context: Context, components: Components) {
+        VideoCodecTuning.apply(context, components.core.engine)
         DohFailover(context, components.core.engine, components.settings).start()
         provisioner =
             UboProvisioner(context, components.core.store, components.addonManager).also { it.start() }

@@ -23,6 +23,8 @@ Android-клиент для просмотра одного видеосерви
 | DoH на AdGuard, TRR-only, failover | `vidframe-prefs.js` (с первого запроса) + `DohFailover` (рантайм) |
 | Телеметрия, Pocket, спонсорский контент выключены | Значения по умолчанию в `Settings.kt`, `vidframe-prefs.js` |
 | Настройки, uBO, история | Ярлыки долгого нажатия на иконку (`shortcuts.xml`) |
+| Сайт отображается в масштабе 70 % | `GeckoRuntimeSettings.displayDensityOverride` = системная плотность × `VIDFRAME_CONTENT_SCALE` (`-Pvidframe.contentScale=0.7`, допустимо 0.5–1.0) |
+| Видео на аппаратном декодере | `VideoCodecTuning`: без аппаратного AV1-декодера выключает `media.av1.enabled`, и сайт отдаёт H.264 |
 | Поиск Fenix убран | Нет домашнего экрана и адресной строки; пункт «Поиск» в настройках скрыт; удалены виджеты поиска, `SEARCH`/`WEB_SEARCH`/`ASSIST` intent-фильтры и deep links `settings_search_engine`, `install_search_widget`. Поиск внутри самого сайта остаётся. |
 
 ## Где что лежит
