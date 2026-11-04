@@ -41,7 +41,7 @@ class VidframeLauncherActivity : Activity() {
                 showProgress()
                 withTimeoutOrNull(VidframeConfig.UBO_WAIT_MS) { VidframeIntegration.uboReady.first { it } }
             }
-            ManifestStorage(applicationContext).saveManifest(MANIFEST)
+            pinManifestIfNeeded()
             startActivity(buildWebAppIntent(packageName, intent?.data?.toString()))
             finish()
         }
@@ -50,6 +50,17 @@ class VidframeLauncherActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         scope.cancel()
+    }
+
+    /**
+     * Restores the pinned web-app manifest when it is missing or was changed (for example after clearing site data).
+     * The usual start only reads it, which keeps the launcher hop short.
+     */
+    private suspend fun pinManifestIfNeeded() {
+        val storage = ManifestStorage(applicationContext)
+        if (storage.loadManifest(VidframeConfig.START_URL) != MANIFEST) {
+            storage.saveManifest(MANIFEST)
+        }
     }
 
     private fun showProgress() {

@@ -78,6 +78,8 @@ android {
         buildConfigField "boolean", "IS_BENCHMARK_BUILD", "false"
         // Vidframe navigation mode: "strict" (block page only) or "warn" (block page + hand-off to another browser).
         buildConfigField "String", "VIDFRAME_NAV_MODE", "\"${project.findProperty("vidframe.navMode") ?: "strict"}\""
+        // Vidframe page scale: web content is rendered at this fraction of the system density (0.5-1.0).
+        buildConfigField "float", "VIDFRAME_CONTENT_SCALE", "${project.findProperty("vidframe.contentScale") ?: "0.7"}f"
     }
 
     def releaseTemplate = {

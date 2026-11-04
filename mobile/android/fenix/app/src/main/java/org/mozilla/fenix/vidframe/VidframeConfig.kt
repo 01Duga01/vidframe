@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.vidframe
 
+import android.content.Context
 import org.mozilla.fenix.BuildConfig
 
 /** Build-time configuration of the Vidframe single-site client. */
@@ -41,4 +42,17 @@ object VidframeConfig {
 
     val navMode: NavMode
         get() = if (BuildConfig.VIDFRAME_NAV_MODE == "warn") NavMode.WARN else NavMode.STRICT
+
+    /** Fraction of the system display density used for web content; 0.7 renders the site at 70 %. */
+    val contentScale: Float
+        get() = BuildConfig.VIDFRAME_CONTENT_SCALE.coerceIn(MIN_CONTENT_SCALE, 1f)
+
+    private const val MIN_CONTENT_SCALE = 0.5f
+
+    /**
+     * Density handed to Gecko instead of the system one, or null to keep the system density. A smaller density means a
+     * smaller CSS pixel, so the whole page (menus, player controls, fullscreen) is laid out as on a larger screen.
+     */
+    fun contentDensityOverride(context: Context, scale: Float = contentScale): Float? =
+        if (scale < 1f) context.resources.displayMetrics.density * scale else null
 }
