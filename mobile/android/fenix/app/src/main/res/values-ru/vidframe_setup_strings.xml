@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <string name="vidframe_setup_title">Устанавливаем блокировщик рекламы</string>
+    <string name="vidframe_setup_body">Vidframe скачивает и устанавливает uBlock Origin — бесплатный блокировщик рекламы с открытым исходным кодом. Это может занять от нескольких секунд до нескольких минут в зависимости от скорости интернета. Так происходит только при первом запуске.</string>
+    <string name="vidframe_setup_checking">Проверяем последнюю версию…</string>
+    <string name="vidframe_setup_downloading_percent">Скачиваем uBlock Origin %1$s — %2$d %%</string>
+    <string name="vidframe_setup_downloading">Скачиваем uBlock Origin %1$s…</string>
+    <string name="vidframe_setup_installing">Устанавливаем uBlock Origin %1$s…</string>
+    <string name="vidframe_setup_ready">Готово</string>
+    <string name="vidframe_setup_skip">Пока продолжить без блокировщика</string>
+</resources>

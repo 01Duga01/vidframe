@@ -7,4 +7,28 @@
     <string name="vidframe_shortcut_settings" translatable="false">Настройки</string>
     <string name="vidframe_shortcut_addons" translatable="false">Блокировщик</string>
     <string name="vidframe_shortcut_history" translatable="false">История</string>
+    <string name="vidframe_page_scale_title" translatable="false">Масштаб сайта</string>
+    <!-- %1$d: scale chosen automatically for this screen, in percent. -->
+    <string name="vidframe_page_scale_auto_summary" translatable="false">Авто — %1$d %% для этого экрана и размера шрифта</string>
+    <!-- %1$d: fixed scale in percent. -->
+    <string name="vidframe_page_scale_fixed_summary" translatable="false">%1$d %%</string>
+    <string name="vidframe_page_scale_restart" translatable="false">Перезапуск, чтобы применить масштаб…</string>
+    <string-array name="vidframe_page_scale_entries" translatable="false">
+        <item>Авто (по экрану и размеру шрифта)</item>
+        <item>50 %</item>
+        <item>60 %</item>
+        <item>70 %</item>
+        <item>80 %</item>
+        <item>90 %</item>
+        <item>100 %</item>
+    </string-array>
+    <string-array name="vidframe_page_scale_values" translatable="false">
+        <item>auto</item>
+        <item>0.5</item>
+        <item>0.6</item>
+        <item>0.7</item>
+        <item>0.8</item>
+        <item>0.9</item>
+        <item>1.0</item>
+    </string-array>
 </resources>

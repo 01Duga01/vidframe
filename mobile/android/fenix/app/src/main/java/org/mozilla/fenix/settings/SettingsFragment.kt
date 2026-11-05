@@ -29,6 +29,7 @@ import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
@@ -91,6 +92,7 @@ import org.mozilla.fenix.settings.account.AccountUiView
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.vidframe.PageScale
 
 /** Main settings screen. */
 @Suppress("LargeClass", "TooManyFunctions")
@@ -658,6 +660,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             FeatureFlags.customExtensionCollectionFeature,
         )
         setupGeckoLogsPreference(settings)
+        setupPageScalePreference()
         setupHttpsOnlyPreferences(settings)
         setupIPProtectionPreferences(components.ipProtection.store)
         setupNotificationPreference(NotificationManagerCompat.from(requireContext()).areNotificationsEnabled())
@@ -772,6 +775,32 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                     },
                     FXA_SYNC_OVERRIDE_EXIT_DELAY,
                 )
+            true
+        }
+    }
+
+    /** Vidframe: page scale choice; a new value needs a fresh Gecko runtime, so the app restarts. */
+    private fun setupPageScalePreference() {
+        val preference = findPreference<ListPreference>(PageScale.PREF_KEY) ?: return
+        val context = requireContext()
+        preference.value = PageScale.storedValue(context)
+        preference.summaryProvider =
+            Preference.SummaryProvider<ListPreference> { pref ->
+                val percent = PageScale.percent(PageScale.current(context, pref.value ?: PageScale.AUTO))
+                if (PageScale.parse(pref.value) == null) {
+                    getString(R.string.vidframe_page_scale_auto_summary, percent)
+                } else {
+                    getString(R.string.vidframe_page_scale_fixed_summary, percent)
+                }
+            }
+        preference.setOnPreferenceChangeListener { _, newValue ->
+            if (newValue != preference.value) {
+                Toast.makeText(context, R.string.vidframe_page_scale_restart, Toast.LENGTH_SHORT).show()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    { PageScale.restartApp(context.applicationContext) },
+                    PAGE_SCALE_RESTART_DELAY_MS,
+                )
+            }
             true
         }
     }
@@ -934,6 +963,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
     companion object {
         private const val SCROLL_INDICATOR_DELAY = 10L
         private const val FXA_SYNC_OVERRIDE_EXIT_DELAY = 2000L
+        private const val PAGE_SCALE_RESTART_DELAY_MS = 600L
         private const val AMO_COLLECTION_OVERRIDE_EXIT_DELAY = 3000L
     }
 }

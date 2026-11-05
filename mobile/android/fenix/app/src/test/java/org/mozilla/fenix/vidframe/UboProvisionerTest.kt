@@ -12,6 +12,7 @@ import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -51,8 +52,129 @@ class UboProvisionerTest {
         store = BrowserStore()
     }
 
-    private fun TestScope.provisioner() =
-        UboProvisioner(context, store, addonManager, scope = backgroundScope, ioDispatcher = testDispatcher)
+    private fun TestScope.provisioner(
+        latest: UboRelease? = null,
+        bundledVersion: String = "1.60.0",
+        download: (UboRelease, File, (Float?) -> Unit) -> Boolean = { _, _, _ -> false },
+    ) =
+        UboProvisioner(
+            context,
+            store,
+            addonManager,
+            scope = backgroundScope,
+            ioDispatcher = testDispatcher,
+            bundledVersion = bundledVersion,
+            latestRelease = { latest },
+            download = download,
+        )
+
+    private val newer = UboRelease("1.63.2", "https://addons.mozilla.org/ubo.xpi", "00", 4096)
+
+    @Test
+    fun `GIVEN AMO has a newer release WHEN started THEN it is downloaded with progress and installed instead`() =
+        runTest(testDispatcher) {
+            val url = slot<String>()
+            val onSuccess = slot<(Addon) -> Unit>()
+            every { addonManager.installAddon(capture(url), any(), capture(onSuccess), any()) } returns mockk()
+            val phases = mutableListOf<UboSetupState>()
+            lateinit var provisioner: UboProvisioner
+            provisioner =
+                provisioner(latest = newer) { _, target, onProgress ->
+                    phases += provisioner.state.value
+                    target.writeBytes(byteArrayOf(1))
+                    onProgress(0.5f)
+                    phases += provisioner.state.value
+                    true
+                }
+            provisioner.start()
+            testScheduler.runCurrent()
+
+            assertEquals(UboSetupState(UboSetupState.Phase.DOWNLOADING, "1.63.2", 0f), phases[0])
+            assertEquals(UboSetupState(UboSetupState.Phase.DOWNLOADING, "1.63.2", 0.5f), phases[1])
+            assertEquals(UboSetupState(UboSetupState.Phase.INSTALLING, "1.63.2"), provisioner.state.value)
+            assertTrue(url.captured.endsWith("ublock_origin_latest.xpi"))
+
+            onSuccess.captured(Addon(id = VidframeConfig.UBO_ID, version = "1.63.2"))
+            testScheduler.runCurrent()
+            assertEquals(UboSetupState.Phase.READY, provisioner.state.value.phase)
+            assertTrue(provisioner.ready.value)
+        }
+
+    @Test
+    fun `GIVEN the bundled copy is already the newest WHEN started THEN nothing is downloaded`() =
+        runTest(testDispatcher) {
+            val url = slot<String>()
+            every { addonManager.installAddon(capture(url), any(), any(), any()) } returns mockk()
+            var downloads = 0
+            provisioner(latest = newer, bundledVersion = "1.63.2") { _, _, _ ->
+                downloads++
+                true
+            }.start()
+            testScheduler.runCurrent()
+
+            assertEquals(0, downloads)
+            assertTrue(url.captured.endsWith("/ublock_origin.xpi"))
+        }
+
+    @Test
+    fun `GIVEN the download fails WHEN started THEN the bundled copy is installed`() =
+        runTest(testDispatcher) {
+            val url = slot<String>()
+            every { addonManager.installAddon(capture(url), any(), any(), any()) } returns mockk()
+            provisioner(latest = newer) { _, _, _ -> false }.start()
+            testScheduler.runCurrent()
+
+            assertTrue(url.captured.endsWith("/ublock_origin.xpi"))
+        }
+
+    @Test
+    fun `GIVEN the downloaded release fails to install WHEN started THEN the bundled copy is tried`() =
+        runTest(testDispatcher) {
+            val urls = mutableListOf<String>()
+            val onError = slot<(Throwable) -> Unit>()
+            every { addonManager.installAddon(capture(urls), any(), any(), capture(onError)) } returns mockk()
+            val provisioner =
+                provisioner(latest = newer) { _, target, _ ->
+                    target.writeBytes(byteArrayOf(1))
+                    true
+                }
+            provisioner.start()
+            testScheduler.runCurrent()
+            onError.captured(IllegalStateException("bad signature"))
+            testScheduler.runCurrent()
+
+            assertEquals(2, urls.size)
+            assertTrue(urls[0].endsWith("ublock_origin_latest.xpi"))
+            assertTrue(urls[1].endsWith("/ublock_origin.xpi"))
+            assertEquals(UboSetupState(UboSetupState.Phase.INSTALLING, "1.60.0"), provisioner.state.value)
+        }
+
+    @Test
+    fun `GIVEN an add-on with another ID is installed THEN it is removed and setup still finishes`() =
+        runTest(testDispatcher) {
+            val onSuccess = slot<(Addon) -> Unit>()
+            every { addonManager.installAddon(any(), any(), capture(onSuccess), any()) } returns mockk()
+            var installedHook = 0
+            val provisioner =
+                UboProvisioner(
+                    context,
+                    store,
+                    addonManager,
+                    scope = backgroundScope,
+                    ioDispatcher = testDispatcher,
+                    onInstalled = { installedHook++ },
+                    latestRelease = { null },
+                )
+            provisioner.start()
+            testScheduler.runCurrent()
+            val impostor = Addon(id = "uBOLite@raymondhill.net")
+            onSuccess.captured(impostor)
+            testScheduler.runCurrent()
+
+            verify { addonManager.uninstallAddon(impostor, any(), any()) }
+            assertTrue(provisioner.ready.value)
+            assertEquals(0, installedHook)
+        }
 
     @Test
     fun `GIVEN a first run WHEN started THEN the bundled XPI is installed from file and ready follows success`() =
@@ -71,10 +193,35 @@ class UboProvisionerTest {
             verify { addonManager.installAddon(any(), InstallationMethod.FROM_FILE, any(), any()) }
 
             onSuccess.captured(Addon(id = VidframeConfig.UBO_ID, version = "1.0"))
+            testScheduler.runCurrent()
 
             assertTrue(provisioner.ready.value)
             val prefs = testContext.getSharedPreferences(UboProvisioner.PREFS_NAME, Context.MODE_PRIVATE)
             assertTrue(prefs.getBoolean(UboProvisioner.KEY_PROVISIONED, false))
+        }
+
+    @Test
+    fun `GIVEN a first run WHEN the install succeeds THEN the onInstalled hook runs once, and not on failure`() =
+        runTest(testDispatcher) {
+            val onSuccess = slot<(Addon) -> Unit>()
+            every { addonManager.installAddon(any(), any(), capture(onSuccess), any()) } returns mockk()
+            var installed = 0
+            UboProvisioner(
+                    context,
+                    store,
+                    addonManager,
+                    scope = backgroundScope,
+                    ioDispatcher = testDispatcher,
+                    onInstalled = { installed++ },
+                    latestRelease = { null },
+                )
+                .start()
+            testScheduler.runCurrent()
+
+            assertEquals(0, installed)
+            onSuccess.captured(Addon(id = VidframeConfig.UBO_ID, version = "1.0"))
+            testScheduler.runCurrent()
+            assertEquals(1, installed)
         }
 
     @Test
@@ -117,6 +264,7 @@ class UboProvisionerTest {
             provisioner.start()
             testScheduler.runCurrent()
             onError.captured(IllegalStateException("signature"))
+            testScheduler.runCurrent()
 
             assertTrue(provisioner.ready.value)
         }

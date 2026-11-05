@@ -25,6 +25,9 @@ class VidframeRequestInterceptor(private val context: Context) {
         if (uri.startsWith("$EXTERNAL_SCHEME://")) {
             return handleExternalOpen(uri, hasUserGesture)
         }
+        if (uri.startsWith("${VideoDownloader.SCHEME}://")) {
+            return handleDownload(uri, hasUserGesture)
+        }
         if (NavigationAllowlist.isAllowed(uri)) {
             return null
         }
@@ -43,17 +46,35 @@ class VidframeRequestInterceptor(private val context: Context) {
         ) {
             return InterceptionResponse.Deny
         }
-        val view = Intent(Intent.ACTION_VIEW, Uri.parse(target)).addCategory(Intent.CATEGORY_BROWSABLE)
+        openInOtherBrowser(target)
+        return InterceptionResponse.Deny
+    }
+
+    /** "Download" on the site: open the download service for the video in another browser (user gesture only). */
+    private fun handleDownload(uri: String, hasUserGesture: Boolean): InterceptionResponse {
+        val videoId = VideoDownloader.videoId(Uri.parse(uri).getQueryParameter("u"))
+        if (!VideoDownloader.isEnabled || !hasUserGesture || videoId == null) {
+            return InterceptionResponse.Deny
+        }
+        logger.info("Opening the download service for $videoId")
+        openInOtherBrowser(VideoDownloader.serviceUrl(videoId))
+        return InterceptionResponse.Deny
+    }
+
+    private fun openInOtherBrowser(url: String) {
+        val view = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
         val chooser =
             Intent.createChooser(view, null).apply {
                 putExtra(
                     Intent.EXTRA_EXCLUDE_COMPONENTS,
-                    arrayOf(ComponentName(context, "org.mozilla.fenix.IntentReceiverActivity")),
+                    arrayOf(
+                        ComponentName(context, "org.mozilla.fenix.IntentReceiverActivity"),
+                        ComponentName(context, VidframeLauncherActivity::class.java),
+                    ),
                 )
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         runCatching { context.startActivity(chooser) }.onFailure { logger.error("No external browser", it) }
-        return InterceptionResponse.Deny
     }
 
     companion object {
