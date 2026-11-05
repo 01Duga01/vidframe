@@ -78,8 +78,8 @@ android {
         buildConfigField "boolean", "IS_BENCHMARK_BUILD", "false"
         // Vidframe navigation mode: "strict" (block page only) or "warn" (block page + hand-off to another browser).
         buildConfigField "String", "VIDFRAME_NAV_MODE", "\"${project.findProperty("vidframe.navMode") ?: "strict"}\""
-        // Vidframe default page scale: "auto" (adapts to screen and font size) or a fixed 0.5-1.0. Users can change it.
-        buildConfigField "String", "VIDFRAME_CONTENT_SCALE", "\"${project.findProperty("vidframe.contentScale") ?: "auto"}\""
+        // Vidframe page scale, fixed for every device: 0.8 (80 %) unless set to another value in 0.5-1.0.
+        buildConfigField "String", "VIDFRAME_CONTENT_SCALE", "\"${project.findProperty("vidframe.contentScale") ?: "0.8"}\""
         // Vidframe: version of the uBlock Origin XPI bundled in the APK (from vidframe/config/ubo.lock). On first run
         // it is compared with the current AMO release; a newer release is downloaded instead.
         def vidframeUboLock = file("../../../../vidframe/config/ubo.lock")
