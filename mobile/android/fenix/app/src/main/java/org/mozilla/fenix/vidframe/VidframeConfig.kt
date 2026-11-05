@@ -19,12 +19,6 @@ object VidframeConfig {
     const val UBO_ID = "uBlock0@raymondhill.net"
     const val UBO_ASSET = "extensions/ublock_origin.xpi"
 
-    /**
-     * Upper bound for holding the very first page load until uBlock Origin is installed. If the install takes longer,
-     * the site opens anyway and is reloaded once when the blocker is ready (VidframeIntegration.reloadIfOpenedEarly).
-     */
-    const val UBO_WAIT_MS = 2_500L
-
     const val UI_EXTENSION_ID = "ui@vidframe"
     const val UI_EXTENSION_URL = "resource://android/assets/extensions/vidframe-ui/"
 

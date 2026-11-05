@@ -31,6 +31,16 @@ a[href^="vnd.youtube:"] {
 }
 
 
+/* ---------------------------------------------------------------- motion tokens */
+
+:root {
+  /* Material 3 "emphasized" curves and a spring-like overshoot for things that pop in. */
+  --vf-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --vf-ease-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --vf-ease-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --vf-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* ---------------------------------------------------------------- pinch zoom (player.js) */
 
 /* The fullscreen player root carries the transform in --vf-zoom; the site may rewrite the video's inline style. */
@@ -40,53 +50,154 @@ a[href^="vnd.youtube:"] {
 .vf-zoom-root video {
   transform: var(--vf-zoom, none) !important;
   transform-origin: center center !important;
+  will-change: transform;
+}
+/* After the fingers lift, the zoom settles (snap to fill / original) instead of jumping. */
+.vf-zoom-animate video {
+  transition: transform 0.28s var(--vf-ease-emphasized) !important;
 }
 
 .vf-toast {
   position: fixed;
   top: 12%;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 2147483647;
-  padding: 8px 16px;
-  border-radius: 18px;
-  background: rgba(0, 0, 0, 0.72);
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: rgba(28, 28, 30, 0.78);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
   color: #fff;
   font: 500 14px/20px Roboto, system-ui, sans-serif;
+  letter-spacing: 0.1px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.18s ease;
+  transform: translate(-50%, -6px) scale(0.92);
+  transition:
+    opacity 0.18s var(--vf-ease-accelerate),
+    transform 0.18s var(--vf-ease-accelerate);
 }
 .vf-toast-visible {
   opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition:
+    opacity 0.22s var(--vf-ease-decelerate),
+    transform 0.32s var(--vf-ease-spring);
 }
 
 /* ---------------------------------------------------------------- miniplayer (player.js) */
 
 #vf-mini {
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 8px;
+  right: 8px;
   z-index: 2147483000;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   height: 64px;
+  margin-bottom: 8px;
   padding-right: 4px;
-  background: #fff;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
   color: #0f0f0f;
-  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1), 0 -4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.18);
   font: 400 14px/18px Roboto, system-ui, sans-serif;
-  animation: vf-mini-in 0.22s ease-out;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.32s var(--vf-ease-spring),
+    opacity 0.24s var(--vf-ease-emphasized);
+  animation: vf-mini-in 0.42s var(--vf-ease-spring) both;
 }
 @keyframes vf-mini-in {
   from {
-    transform: translateY(100%);
+    transform: translateY(calc(100% + 16px)) scale(0.96);
+    opacity: 0;
   }
   to {
     transform: none;
+    opacity: 1;
   }
 }
+/* Children arrive slightly after the bar for a layered feel. */
+#vf-mini > * {
+  animation: vf-mini-item-in 0.36s var(--vf-ease-decelerate) both;
+}
+#vf-mini > :nth-child(2) {
+  animation-delay: 0.06s;
+}
+#vf-mini > :nth-child(3) {
+  animation-delay: 0.1s;
+}
+#vf-mini > :nth-child(4) {
+  animation-delay: 0.14s;
+}
+@keyframes vf-mini-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Leaving animations (closeMini). */
+#vf-mini.vf-mini-out-down {
+  animation: none;
+  transform: translateY(calc(100% + 16px)) scale(0.96);
+  opacity: 0;
+  transition:
+    transform 0.22s var(--vf-ease-accelerate),
+    opacity 0.2s var(--vf-ease-accelerate);
+}
+#vf-mini.vf-mini-out-left,
+#vf-mini.vf-mini-out-right {
+  animation: none;
+  opacity: 0;
+  transition:
+    transform 0.22s var(--vf-ease-accelerate),
+    opacity 0.2s linear;
+}
+#vf-mini.vf-mini-out-left {
+  transform: translateX(-110%);
+}
+#vf-mini.vf-mini-out-right {
+  transform: translateX(110%);
+}
+#vf-mini.vf-mini-out-up {
+  animation: none;
+  transform: translateY(-40vh) scale(1.06);
+  opacity: 0;
+  transition:
+    transform 0.26s var(--vf-ease-emphasized),
+    opacity 0.22s var(--vf-ease-accelerate);
+}
+#vf-mini.vf-mini-error {
+  animation:
+    vf-mini-in 0.42s var(--vf-ease-spring) both,
+    vf-shake 0.42s 0.1s var(--vf-ease-emphasized);
+}
+@keyframes vf-shake {
+  20% {
+    transform: translateX(-6px);
+  }
+  45% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+}
+
 .vf-mini-media {
   position: relative;
   flex: none;
@@ -120,6 +231,9 @@ a[href^="vnd.youtube:"] {
   background: transparent;
   color: inherit;
   padding: 0;
+  transition:
+    transform 0.16s var(--vf-ease-emphasized),
+    background-color 0.16s linear;
 }
 .vf-mini-btn svg {
   width: 24px;
@@ -128,13 +242,48 @@ a[href^="vnd.youtube:"] {
   vertical-align: middle;
 }
 .vf-mini-btn:active {
-  background: rgba(127, 127, 127, 0.2);
+  transform: scale(0.88);
+  background: rgba(127, 127, 127, 0.22);
+}
+/* Play/pause icon morph: the new glyph spins in from a smaller size. */
+.vf-icon-in {
+  animation: vf-icon-in 0.26s var(--vf-ease-spring);
+}
+@keyframes vf-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @media (prefers-color-scheme: dark) {
   #vf-mini {
-    background: #212121;
+    background: rgba(40, 40, 42, 0.9);
     color: #f1f1f1;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 8px 28px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* Tap feedback on the site's Download control while the download service opens. */
+.vf-pressed {
+  transition: transform 0.15s var(--vf-ease-emphasized) !important;
+  transform: scale(0.94) !important;
+}
+
+/* Respect the system "remove animations" setting. */
+@media (prefers-reduced-motion: reduce) {
+  #vf-mini,
+  #vf-mini > *,
+  .vf-toast,
+  .vf-icon-in,
+  .vf-zoom-animate video {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -143,8 +292,7 @@ a[href^="vnd.youtube:"] {
 /* In the Android PiP window the whole page is tiny; let the playing video (or the miniplayer) fill it. */
 @media (max-width: 520px) and (max-height: 320px) {
   #player-container-id video,
-  .html5-video-player video,
-  #vf-mini .vf-mini-media {
+  .html5-video-player video {
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
@@ -153,8 +301,23 @@ a[href^="vnd.youtube:"] {
     background: #000 !important;
     object-fit: contain !important;
   }
+  /* The bar itself fills the window (its blur would otherwise trap fixed children inside it). */
   #vf-mini {
-    height: 0 !important;
+    inset: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+    transform: none !important;
+    background: #000 !important;
+  }
+  #vf-mini .vf-mini-media {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 }
 

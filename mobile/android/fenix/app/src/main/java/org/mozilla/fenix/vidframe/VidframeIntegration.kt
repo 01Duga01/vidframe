@@ -28,6 +28,10 @@ object VidframeIntegration {
     val uboReady: StateFlow<Boolean>
         get() = provisioner?.ready ?: MutableStateFlow(true)
 
+    /** Detailed first-run progress for the setup screen. */
+    val uboState: StateFlow<UboSetupState>
+        get() = provisioner?.state ?: MutableStateFlow(UboSetupState(UboSetupState.Phase.READY))
+
     fun start(context: Context, components: Components) {
         val engine = components.core.engine
 

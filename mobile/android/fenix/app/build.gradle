@@ -80,6 +80,14 @@ android {
         buildConfigField "String", "VIDFRAME_NAV_MODE", "\"${project.findProperty("vidframe.navMode") ?: "strict"}\""
         // Vidframe default page scale: "auto" (adapts to screen and font size) or a fixed 0.5-1.0. Users can change it.
         buildConfigField "String", "VIDFRAME_CONTENT_SCALE", "\"${project.findProperty("vidframe.contentScale") ?: "auto"}\""
+        // Vidframe: version of the uBlock Origin XPI bundled in the APK (from vidframe/config/ubo.lock). On first run
+        // it is compared with the current AMO release; a newer release is downloaded instead.
+        def vidframeUboLock = file("../../../../vidframe/config/ubo.lock")
+        def vidframeUboVersionLine = vidframeUboLock.isFile() ? vidframeUboLock.readLines().find { it.startsWith("UBO_VERSION=") } : null
+        def vidframeUboVersion = vidframeUboVersionLine ? vidframeUboVersionLine.substring("UBO_VERSION=".length()).trim() : ""
+        buildConfigField "String", "VIDFRAME_UBO_VERSION", "\"${vidframeUboVersion}\""
+        // Vidframe: "Download" opens this service with the video URL appended (in another browser); empty = site's own.
+        buildConfigField "String", "VIDFRAME_DOWNLOADER_URL", "\"${project.findProperty("vidframe.downloader") ?: "https://savefrom.net/?url="}\""
         // Vidframe in-app DPI bypass: "auto" (on for Russian networks/SIM/region), "on" or "off".
         buildConfigField "String", "VIDFRAME_DPI_BYPASS", "\"${project.findProperty("vidframe.dpiBypass") ?: "auto"}\""
     }

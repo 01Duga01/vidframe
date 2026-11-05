@@ -8,7 +8,9 @@
  * Player features of the native mobile app, added to the mobile site:
  *  - pinch to zoom the video in fullscreen (snaps to "fill screen" and back to the original size, pans with two
  *    fingers, up to 8x);
- *  - a miniplayer bar that keeps the video playing when leaving the watch page, until it is closed or expanded.
+ *  - a miniplayer bar that keeps the video playing when leaving the watch page, until it is closed or expanded;
+ *    swipe it sideways to dismiss, up to expand;
+ *  - "Download" opens a download service for the video in another browser (see VideoDownloader.kt).
  * Only standard DOM APIs and the documented embed postMessage API are used, so site redesigns break at most the
  * selectors in findMainVideo().
  */
@@ -20,6 +22,14 @@
   const LISTEN_RETRY_MS = 250;
   const LISTEN_MAX_TRIES = 40;
   const ERROR_AUTOCLOSE_MS = 8000;
+  const SNAP_ANIMATION_MS = 280;
+  const MINI_OUT_MS = 220;
+  const SWIPE_DISMISS_FRACTION = 0.35;
+  const SWIPE_FLING_PX_PER_MS = 0.6;
+  const SWIPE_FLING_MIN_PX = 48;
+  const SWIPE_EXPAND_PX = 56;
+  const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const afterAnimation = (ms, fn) => setTimeout(fn, reducedMotion() ? 0 : ms);
   const log = (...args) => console.info("[vidframe]", ...args);
 
   const toast = (() => {
@@ -32,6 +42,8 @@
       }
       (document.fullscreenElement || document.body).appendChild(el);
       el.textContent = text;
+      el.classList.remove("vf-toast-visible");
+      void el.offsetWidth; // restart the pop-in animation for consecutive toasts
       el.classList.add("vf-toast-visible");
       clearTimeout(timer);
       timer = setTimeout(() => el.classList.remove("vf-toast-visible"), 1200);
@@ -64,7 +76,7 @@
     return contain > 0 ? cover / contain : 1;
   }
 
-  function applyZoom() {
+  function applyZoom({ animate = false } = {}) {
     const root = zoom.root;
     if (!root) {
       return;
@@ -73,13 +85,24 @@
     const maxY = (root.clientHeight * (zoom.scale - 1)) / 2;
     zoom.tx = clamp(zoom.tx, -maxX, maxX);
     zoom.ty = clamp(zoom.ty, -maxY, maxY);
-    if (zoom.scale === 1) {
+    if (zoom.scale === 1 && !animate) {
       root.style.removeProperty("--vf-zoom");
-      root.classList.remove("vf-zoom-root");
+      root.classList.remove("vf-zoom-root", "vf-zoom-animate");
       return;
     }
     root.classList.add("vf-zoom-root");
+    // Live pinching follows the fingers 1:1; only the settle after release is animated.
+    root.classList.toggle("vf-zoom-animate", animate);
     root.style.setProperty("--vf-zoom", `translate(${zoom.tx}px, ${zoom.ty}px) scale(${zoom.scale})`);
+    if (animate) {
+      clearTimeout(zoom.settleTimer);
+      zoom.settleTimer = afterAnimation(SNAP_ANIMATION_MS, () => {
+        root.classList.remove("vf-zoom-animate");
+        if (zoom.scale === 1) {
+          applyZoom();
+        }
+      });
+    }
   }
 
   function resetZoom() {
@@ -105,6 +128,7 @@
       return;
     }
     zoom.root = target.root;
+    zoom.root.classList.remove("vf-zoom-animate");
     zoom.gesture = {
       distance: distance(event.touches[0], event.touches[1]),
       midpoint: midpoint(event.touches[0], event.touches[1]),
@@ -148,7 +172,7 @@
     } else {
       toast(`${zoom.scale.toFixed(1)}×`);
     }
-    applyZoom();
+    applyZoom({ animate: true });
     swallow(event);
   }
 
@@ -234,6 +258,10 @@
     const path = document.createElementNS(ns, "path");
     path.setAttribute("d", ICONS[name]);
     svg.appendChild(path);
+    if (b.firstChild && b.dataset.icon !== name && !reducedMotion()) {
+      svg.classList.add("vf-icon-in");
+    }
+    b.dataset.icon = name;
     b.replaceChildren(svg);
   }
 
@@ -263,16 +291,98 @@
     link.remove();
   }
 
-  function closeMini(reason) {
+  /**
+   * Removes the miniplayer. [exit] picks the leaving animation: "down" (close button, timeout), "left"/"right" (swipe
+   * dismiss) or "up" (expand to the watch page); without it the bar disappears at once.
+   */
+  function closeMini(reason, exit) {
     if (!mini) {
       return;
     }
     log("miniplayer closed:", reason);
+    const { bar } = mini;
     clearInterval(mini.listenTimer);
     clearTimeout(mini.errorTimer);
-    mini.bar.remove();
     window.removeEventListener("message", mini.onMessage);
     mini = null;
+    if (!exit || reducedMotion()) {
+      bar.remove();
+      return;
+    }
+    bar.style.transition = "";
+    bar.style.transform = "";
+    bar.style.opacity = "";
+    bar.classList.add(`vf-mini-out-${exit}`);
+    sendCommandTo(bar.querySelector("iframe"), exit === "up" ? null : "pauseVideo");
+    afterAnimation(MINI_OUT_MS, () => bar.remove());
+  }
+
+  function sendCommandTo(frame, func) {
+    if (frame && func) {
+      frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "*");
+    }
+  }
+
+  /** Swipe sideways to dismiss (follows the finger, flings), swipe up to expand; small moves spring back. */
+  function attachSwipe(bar, expand) {
+    let start = null;
+    bar.addEventListener(
+      "touchstart",
+      event => {
+        if (event.touches.length !== 1) {
+          start = null;
+          return;
+        }
+        const t = event.touches[0];
+        start = { x: t.clientX, y: t.clientY, time: performance.now(), axis: null };
+        bar.style.transition = "none";
+      },
+      { passive: true }
+    );
+    bar.addEventListener(
+      "touchmove",
+      event => {
+        if (!start || !mini || mini.bar !== bar) {
+          return;
+        }
+        const t = event.touches[0];
+        const dx = t.clientX - start.x;
+        const dy = t.clientY - start.y;
+        start.axis ||= Math.abs(dx) > 8 ? "x" : Math.abs(dy) > 8 ? "y" : null;
+        if (start.axis === "x") {
+          bar.style.transform = `translateX(${dx}px)`;
+          bar.style.opacity = String(1 - Math.min(1, Math.abs(dx) / bar.clientWidth) * 0.8);
+          event.preventDefault();
+        } else if (start.axis === "y" && dy < 0) {
+          bar.style.transform = `translateY(${Math.max(dy, -SWIPE_EXPAND_PX * 1.5) * 0.5}px)`;
+          event.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+    bar.addEventListener("touchend", event => {
+      if (!start || !mini || mini.bar !== bar) {
+        start = null;
+        return;
+      }
+      const t = event.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      const speed = Math.abs(dx) / Math.max(1, performance.now() - start.time);
+      const axis = start.axis;
+      start = null;
+      bar.style.transition = "";
+      const far = Math.abs(dx) > bar.clientWidth * SWIPE_DISMISS_FRACTION;
+      const fling = Math.abs(dx) > SWIPE_FLING_MIN_PX && speed > SWIPE_FLING_PX_PER_MS;
+      if (axis === "x" && (far || fling)) {
+        closeMini("swipe", dx > 0 ? "right" : "left");
+      } else if (axis === "y" && dy < -SWIPE_EXPAND_PX) {
+        expand();
+      } else {
+        bar.style.transform = "";
+        bar.style.opacity = "";
+      }
+    });
   }
 
   /**
@@ -291,9 +401,10 @@
         ? "Автор запретил мини-плеер для этого видео. Нажмите, чтобы открыть."
         : `Мини-плеер недоступен (ошибка ${code}). Нажмите, чтобы открыть видео.`;
     current.playPause.hidden = true;
+    current.bar.classList.add("vf-mini-error");
     current.errorTimer = setTimeout(() => {
       if (mini === current) {
-        closeMini("error timeout");
+        closeMini("error timeout", "down");
       }
     }, ERROR_AUTOCLOSE_MS);
   }
@@ -324,7 +435,7 @@
     title.textContent = state.title;
 
     const playPause = button("Пауза", "pause", () => sendCommand(mini.playing ? "pauseVideo" : "playVideo"));
-    const close = button("Закрыть", "close", () => closeMini("close button"));
+    const close = button("Закрыть", "close", () => closeMini("close button", "down"));
 
     bar.append(media, title, playPause, close);
     document.body.appendChild(bar);
@@ -347,12 +458,16 @@
     log("miniplayer shown for", state.id, "at", Math.floor(state.time));
 
     const expand = () => {
+      if (!mini) {
+        return;
+      }
       const { id, time } = mini;
-      closeMini("expand");
-      openWatchPage(id, time);
+      closeMini("expand", "up");
+      afterAnimation(MINI_OUT_MS / 2, () => openWatchPage(id, time));
     };
     shield.addEventListener("click", expand);
     title.addEventListener("click", expand);
+    attachSwipe(bar, expand);
 
     mini.onMessage = event => {
       if (!mini || event.source !== mini.frame.contentWindow || typeof event.data !== "string") {
@@ -404,6 +519,39 @@
     frame.addEventListener("load", listen);
     current.listenTimer = setInterval(listen, LISTEN_RETRY_MS);
   }
+
+  // ---------------------------------------------------------------- download
+
+  const DOWNLOAD_LABEL = /^(скачать|download)( видео| video)?$/i;
+  const isVideoPage = () => location.pathname === "/watch" || location.pathname.startsWith("/shorts/");
+  const labelOf = el => (el.getAttribute("aria-label") || el.textContent || "").replace(/\s+/g, " ").trim();
+
+  /** Click-only (not touch) listener, so it never delays scrolling. */
+  document.addEventListener(
+    "click",
+    event => {
+      if (!isVideoPage() || !(event.target instanceof Element)) {
+        return;
+      }
+      const control = event.target.closest(
+        "ytm-download-button-renderer, button, a, [role='button'], [role='menuitem'], ytm-menu-service-item-renderer"
+      );
+      if (!control || control.closest("#vf-mini")) {
+        return;
+      }
+      const isDownload = control.matches("ytm-download-button-renderer") || DOWNLOAD_LABEL.test(labelOf(control));
+      if (!isDownload) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      log("download via external service for", location.href);
+      control.classList.add("vf-pressed");
+      setTimeout(() => control.classList.remove("vf-pressed"), 300);
+      location.assign(`vidframe-download://open?u=${encodeURIComponent(location.href)}`);
+    },
+    true
+  );
 
   setInterval(() => {
     const id = watchVideoId();

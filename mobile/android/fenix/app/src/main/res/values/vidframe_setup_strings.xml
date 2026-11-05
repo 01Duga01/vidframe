@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- First-run setup screen. English by default, Russian in values-ru. -->
+<resources>
+    <string name="vidframe_setup_title">Setting up the ad blocker</string>
+    <string name="vidframe_setup_body">Vidframe is downloading and installing uBlock Origin, a free and open-source ad blocker. This can take from a few seconds to a few minutes depending on your connection. It only happens on the first launch.</string>
+    <string name="vidframe_setup_checking">Checking for the latest version…</string>
+    <!-- %1$s: uBlock Origin version, %2$d: percent downloaded. -->
+    <string name="vidframe_setup_downloading_percent">Downloading uBlock Origin %1$s — %2$d%%</string>
+    <!-- %1$s: uBlock Origin version. -->
+    <string name="vidframe_setup_downloading">Downloading uBlock Origin %1$s…</string>
+    <!-- %1$s: uBlock Origin version. -->
+    <string name="vidframe_setup_installing">Installing uBlock Origin %1$s…</string>
+    <string name="vidframe_setup_ready">Ready</string>
+    <string name="vidframe_setup_skip">Continue without the ad blocker for now</string>
+</resources>
