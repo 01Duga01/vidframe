@@ -42,3 +42,9 @@ pref("toolkit.telemetry.enabled", false);
 // app releases.
 pref("extensions.update.enabled", true);
 pref("extensions.update.autoUpdateDefault", true);
+
+// The miniplayer's embedded player is an iframe created by the built-in
+// vidframe-ui content script. With this isolation (on by default in Nightly
+// builds) Gecko strips the Referer from such add-on-initiated loads, and the
+// embed then always fails with error 153. Release builds have it off already.
+pref("privacy.antitracking.isolateContentScriptResources", false);
