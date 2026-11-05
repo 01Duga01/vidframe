@@ -196,9 +196,8 @@ class UboProvisioner(
             .getOrNull()
 
     companion object {
-        @VisibleForTesting internal const val PREFS_NAME = "vidframe"
-
-        @VisibleForTesting internal const val KEY_PROVISIONED = "ubo_provisioned"
+        internal const val PREFS_NAME = "vidframe"
+        internal const val KEY_PROVISIONED = "ubo_provisioned"
 
         private const val LATEST_FILE = "ublock_origin_latest.xpi"
         private const val CHECK_TIMEOUT_MS = 6_000

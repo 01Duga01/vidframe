@@ -44,6 +44,8 @@ object VidframeIntegration {
                     onInstalled = { reloadIfOpenedEarly(components) },
                 )
                 .also { it.start() }
+        // From the second day on: one AMO check on the first start of each day (device date, stored locally).
+        UboDailyCheck(context, engine, components.addonUpdater).runIfDue()
 
         // Preconnect only once the DPI bypass (if any) is in place, so early connections take the same route.
         DpiBypass.start(context, engine) {

@@ -114,7 +114,7 @@ a[href^="vnd.youtube:"] {
   transition:
     transform 0.32s var(--vf-ease-spring),
     opacity 0.24s var(--vf-ease-emphasized);
-  animation: vf-mini-in 0.42s var(--vf-ease-spring) both;
+  animation: vf-mini-in 0.42s var(--vf-ease-spring) backwards;
 }
 @keyframes vf-mini-in {
   from {
@@ -128,7 +128,7 @@ a[href^="vnd.youtube:"] {
 }
 /* Children arrive slightly after the bar for a layered feel. */
 #vf-mini > * {
-  animation: vf-mini-item-in 0.36s var(--vf-ease-decelerate) both;
+  animation: vf-mini-item-in 0.36s var(--vf-ease-decelerate) backwards;
 }
 #vf-mini > :nth-child(2) {
   animation-delay: 0.06s;
@@ -183,7 +183,7 @@ a[href^="vnd.youtube:"] {
 }
 #vf-mini.vf-mini-error {
   animation:
-    vf-mini-in 0.42s var(--vf-ease-spring) both,
+    vf-mini-in 0.42s var(--vf-ease-spring) backwards,
     vf-shake 0.42s 0.1s var(--vf-ease-emphasized);
 }
 @keyframes vf-shake {
@@ -275,13 +275,151 @@ a[href^="vnd.youtube:"] {
   transform: scale(0.94) !important;
 }
 
+/* ---------------------------------------------------------------- site motion */
+
+/*
+ * Motion close to the native app, added to the site without touching its scripts. Only opacity and transform are
+ * animated (compositor-only, no layout work), and only once per inserted element, so scrolling is unaffected.
+ */
+
+/* A newly shown screen (home, search, watch, channel) rises in. */
+ytm-browse,
+ytm-search,
+ytm-watch {
+  animation: vf-page-in 0.26s var(--vf-ease-decelerate) backwards;
+}
+@keyframes vf-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Feed cards loaded by infinite scrolling fade up as they arrive. */
+ytm-rich-item-renderer,
+ytm-video-with-context-renderer,
+ytm-compact-video-renderer,
+ytm-reel-item-renderer,
+ytm-shorts-lockup-view-model,
+ytm-channel-list-sub-menu-avatar-renderer {
+  animation: vf-card-in 0.32s var(--vf-ease-decelerate) backwards;
+}
+@keyframes vf-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Thumbnails and avatars fade in when their image arrives instead of popping (class set by player.js). */
+img.vf-img-in {
+  animation: vf-img-in 0.3s var(--vf-ease-decelerate) backwards;
+}
+@keyframes vf-img-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Press feedback: cards sink slightly, buttons and chips squeeze, released with a spring. */
+ytm-rich-item-renderer,
+ytm-video-with-context-renderer,
+ytm-compact-video-renderer,
+ytm-reel-item-renderer,
+ytm-shorts-lockup-view-model {
+  transition: transform 0.3s var(--vf-ease-spring);
+}
+ytm-rich-item-renderer:active,
+ytm-video-with-context-renderer:active,
+ytm-compact-video-renderer:active,
+ytm-reel-item-renderer:active,
+ytm-shorts-lockup-view-model:active {
+  transform: scale(0.975);
+  transition-duration: 0.12s;
+  transition-timing-function: var(--vf-ease-emphasized);
+}
+.yt-spec-button-shape-next,
+ytm-chip-cloud-chip-renderer,
+ytm-pivot-bar-item-renderer {
+  transition: transform 0.28s var(--vf-ease-spring);
+}
+.yt-spec-button-shape-next:active,
+ytm-chip-cloud-chip-renderer:active,
+ytm-pivot-bar-item-renderer:active {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+  transition-timing-function: var(--vf-ease-emphasized);
+}
+
+/* Like, dislike and subscribe "pop" when toggled (class set by player.js). */
+.vf-pop {
+  animation: vf-pop 0.46s var(--vf-ease-spring);
+}
+.vf-pop-like {
+  animation: vf-pop-like 0.5s var(--vf-ease-spring);
+}
+@keyframes vf-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.16);
+  }
+  65% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes vf-pop-like {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  30% {
+    transform: scale(1.22) rotate(-14deg);
+  }
+  60% {
+    transform: scale(0.94) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
 /* Respect the system "remove animations" setting. */
 @media (prefers-reduced-motion: reduce) {
   #vf-mini,
   #vf-mini > *,
   .vf-toast,
   .vf-icon-in,
-  .vf-zoom-animate video {
+  .vf-zoom-animate video,
+  ytm-browse,
+  ytm-search,
+  ytm-watch,
+  ytm-rich-item-renderer,
+  ytm-video-with-context-renderer,
+  ytm-compact-video-renderer,
+  ytm-reel-item-renderer,
+  ytm-shorts-lockup-view-model,
+  ytm-channel-list-sub-menu-avatar-renderer,
+  img.vf-img-in,
+  .vf-pop,
+  .vf-pop-like,
+  .yt-spec-button-shape-next,
+  ytm-chip-cloud-chip-renderer,
+  ytm-pivot-bar-item-renderer {
     animation: none !important;
     transition: none !important;
   }

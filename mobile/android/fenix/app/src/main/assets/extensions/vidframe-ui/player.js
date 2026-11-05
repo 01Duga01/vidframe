@@ -10,7 +10,8 @@
  *    fingers, up to 8x);
  *  - a miniplayer bar that keeps the video playing when leaving the watch page, until it is closed or expanded;
  *    swipe it sideways to dismiss, up to expand;
- *  - "Download" opens a download service for the video in another browser (see VideoDownloader.kt).
+ *  - "Download" opens a download service for the video in another browser (see VideoDownloader.kt);
+ *  - site motion close to the native app: thumbnails fade in, like/dislike/subscribe pop (with m-youtube.css).
  * Only standard DOM APIs and the documented embed postMessage API are used, so site redesigns break at most the
  * selectors in findMainVideo().
  */
@@ -519,6 +520,60 @@
     frame.addEventListener("load", listen);
     current.listenTimer = setInterval(listen, LISTEN_RETRY_MS);
   }
+
+  // ---------------------------------------------------------------- site motion
+
+  const FADE_IMAGES_IN =
+    "ytm-rich-item-renderer, ytm-video-with-context-renderer, ytm-compact-video-renderer, ytm-reel-item-renderer, " +
+    "ytm-shorts-lockup-view-model, ytm-channel-list-sub-menu-avatar-renderer, .media-item-thumbnail-container";
+
+  /** Images that arrive after the page has rendered fade in; cached ones (already complete) are left alone. */
+  document.addEventListener(
+    "load",
+    event => {
+      const img = event.target;
+      if (img instanceof HTMLImageElement && !reducedMotion() && img.closest(FADE_IMAGES_IN)) {
+        img.classList.remove("vf-img-in");
+        void img.offsetWidth;
+        img.classList.add("vf-img-in");
+      }
+    },
+    true
+  );
+
+  const POP_TARGETS =
+    "like-button-view-model, dislike-button-view-model, ytm-subscribe-button-renderer, subscribe-button-view-model";
+  const POP_LABEL = /^(нравится|не нравится|like|dislike|i like|i dislike|подписаться|subscribe|вы подписаны|subscribed)/i;
+
+  function pop(el, cls) {
+    el.classList.remove("vf-pop", "vf-pop-like");
+    void el.offsetWidth; // restart when tapped repeatedly
+    el.classList.add(cls);
+    el.addEventListener("animationend", () => el.classList.remove(cls), { once: true });
+  }
+
+  /** Like, dislike and subscribe pop when tapped, the like icon with a little tilt like in the app. */
+  document.addEventListener(
+    "click",
+    event => {
+      if (reducedMotion() || !(event.target instanceof Element)) {
+        return;
+      }
+      const control = event.target.closest("button, [role='button']");
+      if (!control || control.closest("#vf-mini")) {
+        return;
+      }
+      const host = control.closest(POP_TARGETS);
+      const label = (control.getAttribute("aria-label") || control.textContent || "").trim();
+      if (!host && !POP_LABEL.test(label)) {
+        return;
+      }
+      const isLike = (host && host.matches("like-button-view-model")) || /^(нравится|like|i like)/i.test(label);
+      const icon = control.querySelector("svg, yt-icon, c3-icon, .yt-spec-button-shape-next__icon") || control;
+      pop(icon, isLike ? "vf-pop-like" : "vf-pop");
+    },
+    true
+  );
 
   // ---------------------------------------------------------------- download
 
