@@ -13,7 +13,8 @@
  *  - "Download" opens a download service for the video in another browser (see VideoDownloader.kt);
  *  - site motion close to the native app: thumbnails fade in, like/dislike/subscribe pop (with m-youtube.css);
  *  - larger Shorts action buttons with generous touch areas;
- *  - on regular videos, the site's press-and-hold 2x speed only after holding for 3 seconds.
+ *  - on regular videos, the site's press-and-hold 2x speed only after holding for 3 seconds;
+ *  - the "Ask a question" (Gemini) field does not grab focus, and so does not open the keyboard, until it is tapped.
  * Only standard DOM APIs and the documented embed postMessage API are used, so site redesigns break at most the
  * selectors in findMainVideo().
  */
@@ -684,6 +685,68 @@
       const video = event.target;
       if (hold.active && !hold.ours && video === hold.video && video.playbackRate !== hold.rate) {
         video.playbackRate = hold.rate;
+      }
+    },
+    true
+  );
+
+  // ---------------------------------------------------------------- Ask (Gemini) field focus
+
+  const ASK_FIELD = /^(ask a question|ask about|ask anything|задайте вопрос|задать вопрос|спросите|спросить)/i;
+  const TAP_FOCUS_WINDOW_MS = 1000;
+  let lastPointer = { target: null, time: 0 };
+
+  window.addEventListener(
+    "pointerdown",
+    event => {
+      lastPointer = { target: event.target, time: performance.now() };
+    },
+    { capture: true, passive: true }
+  );
+
+  function fieldLabel(el) {
+    return (
+      el.getAttribute("placeholder") ||
+      el.getAttribute("aria-placeholder") ||
+      el.getAttribute("data-placeholder") ||
+      el.getAttribute("aria-label") ||
+      ""
+    ).trim();
+  }
+
+  const isTextField = el =>
+    el instanceof HTMLTextAreaElement ||
+    (el instanceof HTMLInputElement && !["button", "checkbox", "radio", "submit"].includes(el.type)) ||
+    (el instanceof HTMLElement && el.isContentEditable);
+
+  /** True if [node] is [field]'s box: one of its three closest ancestors. */
+  function isNearAncestor(node, field) {
+    let el = field.parentElement;
+    for (let i = 0; el && i < 3; i++, el = el.parentElement) {
+      if (el === node) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Opening the Ask panel focuses its question field, which pops up the keyboard over the answer. Focus that does not
+   * come from a tap on the field itself (or on the box around it) is taken back; tapping the field works as usual.
+   */
+  document.addEventListener(
+    "focusin",
+    event => {
+      const field = event.target;
+      if (!(field instanceof Element) || !isTextField(field) || !ASK_FIELD.test(fieldLabel(field))) {
+        return;
+      }
+      const tapped = lastPointer.target;
+      const recent = performance.now() - lastPointer.time < TAP_FOCUS_WINDOW_MS;
+      const tappedField = recent && tapped instanceof Node && (field.contains(tapped) || isNearAncestor(tapped, field));
+      if (!tappedField) {
+        log("kept the keyboard closed: automatic focus of", fieldLabel(field));
+        field.blur();
       }
     },
     true
