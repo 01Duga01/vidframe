@@ -11,7 +11,9 @@
  *  - a miniplayer bar that keeps the video playing when leaving the watch page, until it is closed or expanded;
  *    swipe it sideways to dismiss, up to expand;
  *  - "Download" opens a download service for the video in another browser (see VideoDownloader.kt);
- *  - site motion close to the native app: thumbnails fade in, like/dislike/subscribe pop (with m-youtube.css).
+ *  - site motion close to the native app: thumbnails fade in, like/dislike/subscribe pop (with m-youtube.css);
+ *  - larger Shorts action buttons with generous touch areas;
+ *  - on regular videos, the site's press-and-hold 2x speed only after holding for 3 seconds.
  * Only standard DOM APIs and the documented embed postMessage API are used, so site redesigns break at most the
  * selectors in findMainVideo().
  */
@@ -575,6 +577,118 @@
     true
   );
 
+  // ---------------------------------------------------------------- Shorts buttons
+
+  const SHORTS_ACTION_EDGE_PX = 96;
+
+  /**
+   * Tags the Shorts action column (like, dislike, comments, share, ...) for m-youtube.css: buttons near the right edge,
+   * below the top bar. Each button is measured once; ones not laid out yet (reels further down) are retried later.
+   */
+  function tagShortsButtons() {
+    const width = innerWidth;
+    const height = innerHeight;
+    for (const button of document.querySelectorAll("button:not([data-vf-seen])")) {
+      const rect = button.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        continue;
+      }
+      button.dataset.vfSeen = "1";
+      const inActionColumn =
+        rect.right > width - SHORTS_ACTION_EDGE_PX && rect.width < SHORTS_ACTION_EDGE_PX && rect.top > height * 0.2;
+      if (inActionColumn && !button.closest("#vf-mini")) {
+        button.classList.add("vf-shorts-btn");
+        if (getComputedStyle(button).position === "static") {
+          button.classList.add("vf-shorts-btn-anchor");
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- hold for 2x
+
+  const HOLD_FAST_MS = 3000;
+  const HOLD_MOVE_PX = 12;
+  const hold = { active: false, ours: false, timer: 0, x: 0, y: 0, video: null, rate: 1 };
+
+  function playerVideo(target) {
+    if (location.pathname !== "/watch" || !(target instanceof Element)) {
+      return null;
+    }
+    const player = target.closest("#player-container-id, .html5-video-player");
+    return player ? player.querySelector("video") : null;
+  }
+
+  function endHold() {
+    clearTimeout(hold.timer);
+    if (hold.ours && hold.video) {
+      hold.video.playbackRate = hold.rate;
+    }
+    hold.active = false;
+    hold.ours = false;
+    hold.video = null;
+  }
+
+  /*
+   * The site speeds a video up to 2x shortly after a press-and-hold. On regular videos that now needs a 3 second hold:
+   * until then any speed change made during the hold is undone, after it 2x is applied here; letting go restores the
+   * previous speed. Passive listeners only, so scrolling is never delayed. Shorts keep the site's behaviour.
+   */
+  window.addEventListener(
+    "touchstart",
+    event => {
+      if (event.touches.length !== 1) {
+        endHold();
+        return;
+      }
+      const video = playerVideo(event.target);
+      if (!video) {
+        return;
+      }
+      endHold();
+      Object.assign(hold, {
+        active: true,
+        video,
+        rate: video.playbackRate,
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+      });
+      hold.timer = setTimeout(() => {
+        if (!hold.active || hold.video !== video || video.paused) {
+          return;
+        }
+        hold.ours = true;
+        video.playbackRate = 2;
+        navigator.vibrate?.(12);
+        toast("2×");
+      }, HOLD_FAST_MS);
+    },
+    { capture: true, passive: true }
+  );
+  window.addEventListener(
+    "touchmove",
+    event => {
+      const t = event.touches[0];
+      if (hold.active && t && Math.hypot(t.clientX - hold.x, t.clientY - hold.y) > HOLD_MOVE_PX) {
+        endHold();
+      }
+    },
+    { capture: true, passive: true }
+  );
+  window.addEventListener("touchend", endHold, { capture: true, passive: true });
+  window.addEventListener("touchcancel", endHold, { capture: true, passive: true });
+  document.addEventListener("visibilitychange", endHold);
+  document.addEventListener(
+    "ratechange",
+    event => {
+      const video = event.target;
+      if (hold.active && !hold.ours && video === hold.video && video.playbackRate !== hold.rate) {
+        video.playbackRate = hold.rate;
+      }
+    },
+    true
+  );
+
   // ---------------------------------------------------------------- download
 
   const DOWNLOAD_LABEL = /^(скачать|download)( видео| video)?$/i;
@@ -609,6 +723,9 @@
   );
 
   setInterval(() => {
+    if (location.pathname.startsWith("/shorts/")) {
+      tagShortsButtons();
+    }
     const id = watchVideoId();
     if (id) {
       if (mini) {
