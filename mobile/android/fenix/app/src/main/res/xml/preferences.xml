@@ -43,14 +43,6 @@
             android:title="@string/preferences_search"
             app:isPreferenceVisible="false" />
 
-        <androidx.preference.ListPreference
-            app:iconSpaceReserved="false"
-            android:key="pref_key_vidframe_content_scale"
-            android:title="@string/vidframe_page_scale_title"
-            android:dialogTitle="@string/vidframe_page_scale_title"
-            android:entries="@array/vidframe_page_scale_entries"
-            android:entryValues="@array/vidframe_page_scale_values" />
-
         <androidx.preference.Preference
             app:iconSpaceReserved="false"
             android:key="@string/pref_key_tabs"
